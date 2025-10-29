@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mipc Computadores</title>
+	<style>
+		:root{
+			--bg:#0f1720; --panel:#0f2430; --accent:#c7ff00; --muted:#9aa5b1; --card:#0b1720;
+		}
+		body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#e6eef3;}
+		.app{display:flex;min-height:100vh}
+		.sidebar{width:240px;background:linear-gradient(180deg,#07121a,#0b1a22);padding:18px;box-shadow:2px 0 8px rgba(0,0,0,.4)}
+		.brand{font-weight:700;color:var(--accent);margin-bottom:18px}
+		.menu{list-style:none;padding:0;margin:0}
+		.menu li{padding:10px 8px;border-radius:8px;color:var(--muted);cursor:pointer;margin-bottom:6px}
+		.menu li.active{background:rgba(199,255,0,.08);color:var(--accent)}
+		.main{flex:1;padding:22px}
+		.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+		.card{background:linear-gradient(180deg, #071722, #06121a);padding:14px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+		.controls{display:flex;gap:8px;align-items:center}
+		button.btn{background:var(--accent);color:#07121a;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+		table{width:100%;border-collapse:collapse;margin-top:12px;color:#dfeef2}
+		th,td{padding:8px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.03);font-size:14px}
+		.actions button{margin-right:6px;padding:6px;border-radius:6px;border:0;cursor:pointer}
+		.btn-edit{background:#3bb4ff;color:#05121a}
+		.btn-delete{background:#ff5b6b;color:#fff}
+		.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,8,.6)}
+		.modal.show{display:flex}
+		.modal .panel{width:640px;background:#071b22;padding:18px;border-radius:8px}
+		.form-row{display:flex;gap:8px;margin-bottom:8px}
+		.form-row input, .form-row textarea, select{flex:1;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:#051417;color:#eaf6f3}
+		.footer-note{margin-top:12px;color:var(--muted);font-size:13px}
+		.small{font-size:13px;color:var(--muted)}
+
+		/* nuevo: estilos para badges de estado */
+		.status-badge{display:inline-block;padding:4px 8px;border-radius:12px;font-size:12px;color:#06121a}
+		.status-ingresado{background:#c7ff00}
+		.status-en_reparacion{background:#3bb4ff;color:#fff}
+		.status-espera_entrega{background:#ffcc33;color:#07121a}
+		.status-entregado{background:#7af0a5;color:#07121a}
+
+		/* pequeño ajuste: botones dentro de tablas también usan .btn para aspecto */
+		button.btn{font-size:13px;line-height:1;display:inline-block}
+
+		/* modal historial */
+		.history-list{max-height:320px;overflow:auto;padding:8px;border-radius:6px;background:#031419;color:#dff0ea}
+
+		/* estilos para miniaturas de imágenes en tabla y modal */
+		.photos-cell img.thumb-img{width:44px;height:30px;object-fit:cover;margin-right:6px;border-radius:4px;cursor:pointer;border:1px solid rgba(255,255,255,.04)}
+		.order-image-preview{display:flex;gap:6px;flex-wrap:wrap}
+		.order-image-preview .thumb{position:relative;display:inline-block}
+		.order-image-preview .thumb img{width:80px;height:60px;object-fit:cover;border-radius:6px}
+		.order-image-preview .thumb button{position:absolute;right:2px;top:2px;padding:2px 6px;background:#ff5b6b;color:#fff;border-radius:4px;border:0;cursor:pointer;font-size:12px}
+
+		@media(max-width:800px){.sidebar{display:none}.modal .panel{width:95%}}
+	</style>
+</head>
+<body>
+	<div class="app">
+		<aside class="sidebar card">
+			<div class="brand">Mipc Computadores</div>
+			<ul class="menu">
+				<li class="active" data-view="orders">Órdenes</li>
+				<li data-view="clients">Clientes</li>
+				<li data-view="finance">Finanzas</li> <!-- nueva pestaña -->
+				<li data-view="settings">Configuración</li>
+			</ul>
+			<div style="margin-top:20px" class="small">Guardado en local (localStorage). Puedes exportar/importar desde Configuración.</div>
+		</aside>
+
+		<main class="main">
+			<div class="header">
+				<h2 id="view-title">Órdenes</h2>
+				<div class="controls">
+					<button type="button" class="btn" id="btn-add-order">+ Nueva orden</button> <!-- added type -->
+					<button type="button" class="btn" id="btn-add-client" style="display:none;background:#3bb4ff;color:#04121a">+ Nuevo cliente</button> <!-- added type -->
+				</div>
+			</div>
+
+			<section id="orders-section" class="card">
+				<div class="small">
+					Filtrar:
+					<input id="filter-input" placeholder="buscar por cliente, serie o modelo" style="margin-left:8px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+					<!-- nuevo: filtro por estado -->
+					<select id="status-filter" style="margin-left:8px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+						<option value="">Todos los estados</option>
+						<option value="ingresado">Ingresado</option>
+						<option value="en_reparacion">En reparación</option>
+						<option value="espera_entrega">En espera de entrega</option>
+						<option value="entregado">Entregado</option>
+					</select>
+				</div>
+
+				<table id="orders-table" aria-label="Órdenes">
+					<thead>
+						<tr>
+							<th>ID</th><th>Cliente</th><th>Marca</th><th>Modelo</th><th>Serie</th><th>Accesorios</th><th>Falla</th>
+							<th>Estado</th><th>Técnico</th><th>Fecha</th><th>Fotos</th><th>Acciones</th> <!-- agregado columna Fotos -->
+						</tr>
+					</thead>
+					<tbody>
+						<!-- filas generadas por JS -->
+					</tbody>
+				</table>
+				<div class="footer-note" id="orders-count"></div>
+			</section>
+
+			<section id="clients-section" class="card" style="display:none;margin-top:12px">
+				<h3>Clientes</h3>
+				<button type="button" class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button> <!-- added type -->
+				<table id="clients-table">
+					<thead><tr><th>ID</th><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+			<!-- Nueva sección: Finanzas -->
+			<section id="finance-section" class="card" style="display:none;margin-top:12px">
+				<h3>Finanzas</h3>
+				<!-- Panel métricas -->
+				<div id="finance-metrics" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+					<!-- contenido poblado por JS -->
+				</div>
+				<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+					<button class="btn" id="btn-new-transaction">+ Nueva transacción</button>
+					<div id="finance-summary" class="small" style="margin-left:12px">Cargando...</div>
+					<!-- filtros: tipo y categoría -->
+					<select id="type-filter" style="margin-left:12px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+						<option value="">Todos</option>
+						<option value="income">Ingresos</option>
+						<option value="expense">Gastos</option>
+					</select>
+					<select id="category-filter" style="margin-left:8px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+						<option value="">Todas las categorías</option>
+						<!-- opciones pobladas por JS -->
+					</select>
+				</div>
+				<!-- Formulario inline para nueva transacción -->
+				<form id="form-transaction" style="display:block;margin-bottom:8px;gap:8px">
+					<div class="form-row">
+						<select name="type" required>
+							<option value="income">Ingreso</option>
+							<option value="expense">Gasto</option>
+						</select>
+						<input name="amount" type="number" step="0.01" placeholder="Monto" required>
+					</div>
+					<div class="form-row">
+						<select name="category" id="tx-category" required>
+							<!-- opciones pobladas por JS -->
+						</select>
+						<input name="date" type="date" value="">
+					</div>
+					<div class="form-row">
+						<input name="notes" placeholder="Notas" style="flex:2">
+						<button class="btn" type="submit">Guardar</button>
+					</div>
+				</form>
+
+				<table id="transactions-table">
+					<thead><tr><th>ID</th><th>Tipo</th><th>Monto</th><th>Categoría</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
+					<tbody></tbody>
+				</table>
+			</section>
+
+			<section id="settings-section" class="card" style="display:none;margin-top:12px">
+				<h3>Configuración</h3>
+				<button type="button" class="btn" id="export-data">Exportar datos (.json)</button> <!-- added type -->
+				<button type="button" class="btn" id="import-data" style="background:#3bb4ff;color:#04121a">Importar</button> <!-- added type -->
+				<!-- nuevo: exportar PDF de órdenes -->
+				<button type="button" class="btn" id="export-pdf" style="margin-left:8px;background:#7af0a5;color:#04121a">Exportar PDF (Órdenes)</button> <!-- added type -->
+				<input type="file" id="import-file" accept="application/json" style="display:none">
+				<div class="footer-note" style="margin-top:12px">Equipos guardados en hoja de vida por número de serie.</div>
+			</section>
+		</main>
+	</div>
+
+	<!-- Modal: agregar/editar orden -->
+	<div class="modal" id="modal-order">
+		<div class="panel">
+			<h3 id="modal-order-title">Nueva orden</h3>
+			<form id="form-order">
+				<div class="form-row">
+					<select name="clientId" required>
+						<option value="">-- Seleccionar cliente --</option>
+					</select>
+					<button type="button" class="btn" id="btn-order-new-client" style="background:#64707a">Nuevo cliente</button>
+				</div>
+
+				<!-- nuevo: selector de estado -->
+				<div class="form-row">
+					<select name="status" required>
+						<option value="ingresado">Ingresado</option>
+						<option value="en_reparacion">En reparación</option>
+						<option value="espera_entrega">En espera de entrega</option>
+						<option value="entregado">Entregado</option>
+					</select>
+					<!-- espacio para futuro -->
+					<input name="brand" placeholder="Marca" required>
+				</div>
+
+				<div class="form-row">
+					<input name="serial" placeholder="Número de serie (único)" required>
+					<input name="model" placeholder="Modelo">
+				</div>
+
+				<!-- agregado: subida de imágenes y preview -->
+				<div class="form-row" style="flex-direction:column">
+					<label class="small" style="margin:0 0 6px 0">Fotos del equipo (puedes subir varias)</label>
+					<div style="display:flex;gap:8px;align-items:center">
+						<input id="order-images-input" type="file" accept="image/*" multiple>
+						<span class="small" style="color:var(--muted)">Se guardan en local (data URLs)</span>
+					</div>
+					<div id="order-images-preview" class="order-image-preview" style="margin-top:8px"></div>
+				</div>
+
+				<div class="form-row">
+					<input name="accessories" placeholder="Accesorios (ej: cargador, funda)">
+					<textarea name="failure" placeholder="Falla reportada" rows="1" required style="flex:2"></textarea>
+				</div>
+
+				<div class="form-row">
+					<input name="technician" placeholder="Técnico asignado">
+					<input name="notes" placeholder="Notas internas">
+				</div>
+
+				<div style="display:flex;gap:8px;justify-content:flex-end">
+					<button type="button" class="btn" id="btn-close-order" style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn">Guardar orden</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Modal: cliente -->
+	<div class="modal" id="modal-client">
+		<div class="panel">
+			<h3 id="modal-client-title">Nuevo cliente</h3>
+			<form id="form-client">
+				<!-- cambiado: ahora se pide la cédula -->
+				<div class="form-row">
+					<input name="name" placeholder="Nombre" required>
+					<input name="cedula" placeholder="Cédula" required>
+				</div>
+				<div class="form-row">
+					<input name="phone" placeholder="Teléfono">
+					<input name="email" placeholder="Email">
+				</div>
+				<div class="form-row">
+					<input name="address" placeholder="Dirección">
+				</div>
+				<div style="display:flex;gap:8px;justify-content:flex-end">
+					<button type="button" class="btn" id="btn-close-client" style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn" style="background:#3bb4ff;color:#04121a">Guardar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Modal: equipo / hoja de vida -->
+	<div class="modal" id="modal-equipment">
+		<div class="panel">
+			<h3 id="modal-equipment-title">Hoja de vida - Equipo</h3>
+			<div class="history-list" id="equipment-history"></div>
+			<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+				<button type="button" class="btn" id="btn-close-equipment" style="background:#64707a">Cerrar</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- incluir jsPDF desde CDN -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+	<script>
+		// Storage keys
+		const LS_ORDERS = 'local_orders';
+		const LS_CLIENTS = 'local_clients';
+		const LS_EQUIPMENTS = 'local_equipments';
+		const LS_TRANSACTIONS = 'local_transactions'; // nuevo: transacciones financieras
+
+		// Categorías predefinidas para Finanzas
+		const FINANCE_CATEGORIES = ['Servicios','Repuestos','Ventas','Nomina','Otros'];
+
+		// nuevos: estados válidos (clave -> etiqueta)
+		const ORDER_STATUSES = {
+			ingresado: 'Ingresado',
+			en_reparacion: 'En reparación',
+			espera_entrega: 'En espera de entrega',
+			entregado: 'Entregado'
+		};
+
+		// util
+		const $ = sel => document.querySelector(sel);
+		const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+		// estado
+		let editingOrderId = null;
+		let editingClientId = null;
+		let currentOrderImages = []; // nuevas imágenes (dataURLs) temporales para el modal
+
+		// init
+		document.addEventListener('DOMContentLoaded', ()=> {
+			bindUI();
+			renderView('orders');
+			renderOrders();
+			renderClients();
+			populateFinanceCategorySelects(); // rellenar selects de categoría
+			renderFinance(); // inicializar finanzas (después de poblar categorías)
+		});
+
+		function bindUI(){
+			// menu
+			$$('.menu li').forEach(li=>{
+				li.addEventListener('click', e=>{
+					$$('.menu li').forEach(x=>x.classList.remove('active'));
+					li.classList.add('active');
+					renderView(li.dataset.view);
+				});
+			});
+
+			$('#btn-add-order').addEventListener('click', ()=> openOrderModal());
+			$('#btn-order-new-client').addEventListener('click', ()=> openClientModal());
+			$('#btn-new-client-inline').addEventListener('click', ()=> openClientModal());
+			$('#btn-add-client').addEventListener('click', ()=> openClientModal());
+
+			$('#btn-close-order').addEventListener('click', ()=> closeModal('#modal-order'));
+			$('#btn-close-client').addEventListener('click', ()=> closeModal('#modal-client'));
+			$('#btn-close-equipment').addEventListener('click', ()=> closeModal('#modal-equipment'));
+
+			$('#form-order').addEventListener('submit', saveOrderFromForm);
+			$('#form-client').addEventListener('submit', saveClientFromForm);
+
+			// nuevo: manejo input imágenes en modal de orden
+			const imgInput = $('#order-images-input');
+			if(imgInput) imgInput.addEventListener('change', handleOrderImagesInput);
+
+			$('#filter-input').addEventListener('input', renderOrders);
+			$('#status-filter').addEventListener('change', renderOrders);
+
+			$('#export-data').addEventListener('click', exportData);
+			$('#import-data').addEventListener('click', ()=> $('#import-file').click());
+			$('#import-file').addEventListener('change', importDataFile);
+			// binding para exportar PDF
+			const pdfBtn = $('#export-pdf');
+			if(pdfBtn) pdfBtn.addEventListener('click', exportOrdersPDF);
+
+			// Finanzas: bindings
+			const txBtn = $('#btn-new-transaction');
+			if(txBtn) txBtn.addEventListener('click', ()=> {
+				const form = $('#form-transaction');
+				form.reset();
+				// fecha por defecto hoy
+				const d = new Date().toISOString().slice(0,10);
+				form.querySelector('input[name="date"]').value = d;
+				// seleccionar primera categoría por defecto si existe
+				const catSel = form.querySelector('select[name="category"]');
+				if(catSel && catSel.options.length>0) catSel.selectedIndex = 0;
+				form.querySelector('input[name="amount"]').focus();
+			});
+			const txForm = $('#form-transaction');
+			if(txForm) txForm.addEventListener('submit', saveTransactionFromForm);
+
+			// filtros: recargar render cuando cambian
+			const typeFilter = $('#type-filter');
+			if(typeFilter) typeFilter.addEventListener('change', renderFinance);
+			const catFilter = $('#category-filter');
+			if(catFilter) catFilter.addEventListener('change', renderFinance);
+		}
+
+		function renderView(view){
+			$('#view-title').textContent = view === 'orders' ? 'Órdenes' : view === 'clients' ? 'Clientes' : view === 'finance' ? 'Finanzas' : 'Configuración';
+			$('#orders-section').style.display = view === 'orders' ? 'block' : 'none';
+			$('#clients-section').style.display = view === 'clients' ? 'block' : 'none';
+			$('#finance-section').style.display = view === 'finance' ? 'block' : 'none';
+			$('#settings-section').style.display = view === 'settings' ? 'block' : 'none';
+			$('#btn-add-client').style.display = view === 'clients' ? 'inline-block' : 'none';
+		}
+
+		// Storage helpers
+		function loadOrders(){ return JSON.parse(localStorage.getItem(LS_ORDERS) || '[]'); }
+		function saveOrders(list){ localStorage.setItem(LS_ORDERS, JSON.stringify(list)); }
+		function loadClients(){ return JSON.parse(localStorage.getItem(LS_CLIENTS) || '[]'); }
+		function saveClients(list){ localStorage.setItem(LS_CLIENTS, JSON.stringify(list)); }
+		function loadEquipments(){ return JSON.parse(localStorage.getItem(LS_EQUIPMENTS) || '[]'); }
+		function saveEquipments(list){ localStorage.setItem(LS_EQUIPMENTS, JSON.stringify(list)); }
+
+		// Finanzas: almacenamiento y renderizado de transacciones
+		function loadTransactions(){ return JSON.parse(localStorage.getItem(LS_TRANSACTIONS) || '[]'); }
+		function saveTransactions(list){ localStorage.setItem(LS_TRANSACTIONS, JSON.stringify(list)); }
+
+		// Poblado de selects de categoría (form y filtro)
+		function populateFinanceCategorySelects(){
+			const formSel = document.querySelector('#form-transaction select[name="category"]');
+			const filterSel = document.getElementById('category-filter');
+			if(formSel){
+				formSel.innerHTML = '';
+				FINANCE_CATEGORIES.forEach(c=>{
+					const opt = document.createElement('option');
+					opt.value = c; opt.textContent = c;
+					formSel.appendChild(opt);
+				});
+			}
+			if(filterSel){
+				// limpiar excepto la primera opción "Todas"
+				while(filterSel.options.length > 1) filterSel.remove(1);
+				FINANCE_CATEGORIES.forEach(c=>{
+					const opt = document.createElement('option');
+					opt.value = c; opt.textContent = c;
+					filterSel.appendChild(opt);
+				});
+			}
+		}
+
+		// Render órdenes (actualizado: botones ahora con type="button" y PDF button fix)
+		function renderOrders(){
+			const tbody = $('#orders-table tbody');
+			const filter = $('#filter-input').value.toLowerCase().trim();
+			const statusFilter = $('#status-filter').value;
+			const items = loadOrders().filter(o=>{
+				if(statusFilter && (o.status||'ingresado') !== statusFilter) return false;
+				if(!filter) return true;
+				const client = findClientById(o.clientId) || {};
+				return [client.name, o.brand, o.model, o.serial, o.accessories, o.failure, ORDER_STATUSES[o.status]||''].join(' ').toLowerCase().includes(filter);
+			});
+			tbody.innerHTML = '';
+			items.forEach(o=>{
+				const client = findClientById(o.clientId) || {name:'--'};
+				const statusKey = o.status || 'ingresado';
+				const statusLabel = ORDER_STATUSES[statusKey] || statusKey;
+				const statusClass = `status-${statusKey}`;
+				const photosHtml = (o.images && o.images.length) ? o.images.map((src, i) => `<img src="${src}" class="thumb-img" data-id="${o.id}" data-idx="${i}" alt="img">`).join('') : '';
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td>${o.id}</td>
+					<td>${escapeHtml(client.name)}</td>
+					<td>${escapeHtml(o.brand||'')}</td>
+					<td>${escapeHtml(o.model||'')}</td>
+					<td><button type="button" class="btn btn-view-eq" data-serial="${escapeHtml(o.serial||'')}">${escapeHtml(o.serial||'')}</button></td>
+					<td>${escapeHtml(o.accessories||'')}</td>
+					<td>${escapeHtml(o.failure||'')}</td>
+					<td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+					<td>${escapeHtml(o.technician||'')}</td>
+					<td>${new Date(o.date).toLocaleString()}</td>
+					<td class="photos-cell">${photosHtml}</td> <!-- miniaturas -->
+					<td class="actions">
+						<select class="inline-status" data-id="${o.id}">
+							<option value="ingresado"${statusKey==='ingresado'?' selected':''}>Ingresado</option>
+							<option value="en_reparacion"${statusKey==='en_reparacion'?' selected':''}>En reparación</option>
+							<option value="espera_entrega"${statusKey==='espera_entrega'?' selected':''}>En espera de entrega</option>
+							<option value="entregado"${statusKey==='entregado'?' selected':''}>Entregado</option>
+						</select>
+						<button type="button" class="btn btn-edit" data-id="${o.id}">Editar</button> <!-- added type -->
+						<button type="button" class="btn btn-delete" data-id="${o.id}">Eliminar</button> <!-- added type -->
+						<!-- botón nuevo: generar PDF de esta orden (fixed duplicate class attr) -->
+						<button type="button" class="btn btn-pdf" style="background:#071a2a;color:#7af0a5" data-id="${o.id}">PDF</button>
+						<!-- botón nuevo: enviar WhatsApp -->
+						<button type="button" class="btn btn-whatsapp" data-id="${o.id}" style="background:#25D366;color:#06121a">WhatsApp</button> <!-- added type -->
+					</td>
+				`;
+				tbody.appendChild(tr);
+			});
+
+			// acciones
+			$$('.btn-edit').forEach(b=>b.onclick = ()=> openOrderModal(b.dataset.id));
+			$$('.btn-delete').forEach(b=>b.onclick = ()=> { if(confirm('Eliminar orden?')) deleteOrder(b.dataset.id) });
+			$$('select.inline-status').forEach(s=>{
+				s.onchange = ()=> updateOrderStatus(s.dataset.id, s.value);
+			});
+
+			// botón PDF por orden
+			$$('button[data-id]').filter(b => b.classList.contains('btn') && b.textContent === 'PDF')
+				.forEach(b => b.onclick = ()=> exportOrderPDF(b.dataset.id));
+
+			// botón WhatsApp por orden
+			$$('.btn-whatsapp').forEach(b => b.onclick = ()=> openWhatsApp(b.dataset.id));
+
+			// abrir hoja de vida
+			$$('.btn-view-eq').forEach(b=> b.onclick = ()=> {
+				const serial = b.dataset.serial;
+				if(!serial) return alert('Serie inválida');
+				openEquipmentModal(serial);
+			});
+
+			// abrir imagen en nueva pestaña al clickear miniatura
+			$$('.thumb-img').forEach(img => img.onclick = ()=> {
+				const src = img.getAttribute('src');
+				if(src) window.open(src, '_blank');
+			});
+
+			$('#orders-count').textContent = `Mostrando ${items.length} registros`;
+			// actualizar métricas cuando se renderizan órdenes
+			computeMetrics();
+		}
+
+		// eliminar orden (si no existía)
+		function deleteOrder(id){
+			const list = loadOrders().filter(x=>x.id!=id);
+			saveOrders(list);
+			renderOrders();
+			renderFinance();
+			computeMetrics();
+		}
+
+		// Generar PDF para una sola orden
+		function exportOrderPDF(id){
+			const order = loadOrders().find(o=>o.id==id);
+			if(!order) return alert('Orden no encontrada');
+			const client = findClientById(order.clientId) || {name:'--', phone:'', email:''};
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({unit:'pt', format:'letter'});
+			const margin = 40;
+			let y = margin;
+			doc.setFontSize(16);
+			doc.text('Orden de servicio - Mipc Computadores', margin, y);
+			y += 24;
+			doc.setFontSize(11);
+
+			const lines = [
+				`ID: ${order.id}`,
+				`Fecha: ${order.date ? new Date(order.date).toLocaleString() : ''}`,
+				`Estado: ${ORDER_STATUSES[order.status||'ingresado'] || order.status}`,
+				'',
+				'Cliente:',
+				`  Nombre: ${client.name}`,
+				`  Teléfono: ${client.phone||''}`,
+				`  Email: ${client.email||''}`,
+				'',
+				'Equipo:',
+				`  Marca: ${order.brand||''}`,
+				`  Modelo: ${order.model||''}`,
+				`  Serie: ${order.serial||''}`,
+				`  Accesorios: ${order.accessories||''}`,
+				'',
+				`Falla reportada: ${order.failure||''}`,
+				`Técnico: ${order.technician||''}`,
+				`Notas: ${order.notes||''}`
+			];
+
+			const pageHeight = doc.internal.pageSize.height;
+			const lineHeight = 14;
+			lines.forEach(line=>{
+				// salto de página simple
+				if(y + lineHeight > pageHeight - margin){
+					doc.addPage();
+					y = margin;
+				}
+				doc.text(wrapText(line, 90), margin, y);
+				y += lineHeight * (Array.isArray(wrapText(line,90)) ? wrapText(line,90).length : 1);
+			});
+
+			doc.save(`orden_${order.id}.pdf`);
+
+			function wrapText(text, maxChars){
+				// devuelva string o array de líneas según necesidad para jsPDF.text acepta arrays
+				if(!text) return '';
+				if(text.length <= maxChars) return text;
+				const parts = [];
+				let start = 0;
+				while(start < text.length){
+					parts.push(text.slice(start, start+maxChars));
+					start += maxChars;
+				}
+				return parts;
+			}
+		}
+
+		function openOrderModal(id){
+			editingOrderId = id || null;
+			const modal = $('#modal-order');
+			$('#modal-order-title').textContent = id ? 'Editar orden' : 'Nueva orden';
+			const form = $('#form-order');
+			form.reset();
+			populateClientSelect();
+
+			// reset imágenes temporales
+			currentOrderImages = [];
+
+			if(id){
+				const item = loadOrders().find(x=>x.id==id);
+				if(item){
+					form.clientId.value = item.clientId || '';
+					form.brand.value = item.brand || '';
+					form.serial.value = item.serial || '';
+					form.model.value = item.model || '';
+					form.accessories.value = item.accessories || '';
+					form.failure.value = item.failure || '';
+					form.technician.value = item.technician || '';
+					form.notes.value = item.notes || '';
+					form.status.value = item.status || 'ingresado';
+					// cargar imágenes existentes si las hay
+					if(Array.isArray(item.images)) currentOrderImages = item.images.slice();
+				}
+			}
+			renderOrderImagePreviews();
+			modal.classList.add('show');
+			const sel = form.querySelector('select[name="clientId"]');
+			if(sel) sel.focus();
+		}
+
+		// Handler: leer archivos seleccionados y guardarlos como dataURLs
+		function handleOrderImagesInput(e){
+			const files = Array.from(e.target.files || []);
+			if(!files.length) return;
+			files.forEach(file => {
+				const reader = new FileReader();
+				reader.onload = ev => {
+					currentOrderImages.push(ev.target.result);
+					renderOrderImagePreviews();
+				};
+				reader.readAsDataURL(file);
+			});
+			// limpiar input para permitir subir mismos archivos luego si se desea
+			e.target.value = '';
+		}
+
+		function renderOrderImagePreviews(){
+			const container = $('#order-images-preview');
+			if(!container) return;
+			container.innerHTML = '';
+			currentOrderImages.forEach((src, idx) => {
+				const div = document.createElement('div');
+				div.className = 'thumb';
+				div.innerHTML = `<img src="${src}" alt="img${idx}"><button type="button" data-idx="${idx}">x</button>`;
+				container.appendChild(div);
+			});
+			// bind para eliminar preview
+			$$('#order-images-preview .thumb button').forEach(b => b.onclick = ()=> {
+				const i = Number(b.dataset.idx);
+				removeImageFromCurrent(i);
+			});
+		}
+
+		function removeImageFromCurrent(index){
+			if(index<0 || index>=currentOrderImages.length) return;
+			currentOrderImages.splice(index,1);
+			renderOrderImagePreviews();
+		}
+
+		function saveOrderFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+			const list = loadOrders();
+			if(editingOrderId){
+				const idx = list.findIndex(x=>x.id==editingOrderId);
+				if(idx>-1){
+					list[idx] = {
+						...list[idx],
+						clientId: f.clientId.value,
+						brand: f.brand.value,
+						serial: f.serial.value,
+						model: f.model.value,
+						accessories: f.accessories.value,
+						failure: f.failure.value,
+						technician: f.technician.value,
+						notes: f.notes.value,
+						status: f.status ? f.status.value || f.status : (list[idx].status || 'ingresado'),
+						images: currentOrderImages.slice() // guardar imágenes
+					};
+					upsertEquipmentFromOrder(list[idx]);
+				}
+			} else {
+				const item = {
+					id: Date.now().toString().slice(-6),
+					clientId: f.clientId.value,
+					brand: f.brand.value,
+					serial: f.serial.value,
+					model: f.model.value,
+					accessories: f.accessories.value,
+					failure: f.failure.value,
+					technician: f.technician.value,
+					notes: f.notes.value,
+					status: f.status ? f.status.value || 'ingresado' : 'ingresado',
+					date: new Date().toISOString(),
+					images: currentOrderImages.slice() // guardar imágenes
+				};
+				list.unshift(item);
+				upsertEquipmentFromOrder(item);
+			}
+			saveOrders(list);
+			closeModal('#modal-order');
+			renderOrders();
+		}
+
+		// nueva función: actualizar estado rápidamente
+		function updateOrderStatus(id, newStatus){
+			const list = loadOrders();
+			const idx = list.findIndex(x=>x.id==id);
+			if(idx===-1) return;
+			list[idx].status = newStatus;
+			// agregar entrada a historial de equipo si existe serial
+			upsertEquipmentFromOrder({...list[idx], date: new Date().toISOString()});
+			saveOrders(list);
+			renderOrders();
+		}
+
+		// Clients (antes "accounts") - botones editar/eliminar con type="button"
+		function renderClients(){
+			const tbody = $('#clients-table tbody');
+			const items = loadClients();
+			tbody.innerHTML = '';
+			items.forEach(c=>{
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td>${c.id}</td>
+					<td>${escapeHtml(c.name)}</td>
+					<td>${escapeHtml(c.cedula||'')}</td> <!-- agregado: columna cédula -->
+					<td>${escapeHtml(c.phone||'')}</td>
+					<td>${escapeHtml(c.email||'')}</td>
+					<td>
+						<button type="button" class="btn btn-edit" data-id="${c.id}">Editar</button> <!-- added type -->
+						<button type="button" class="btn btn-delete" data-id="${c.id}">Eliminar</button> <!-- added type -->
+					</td>
+				`;
+				tbody.appendChild(tr);
+			});
+			$$('#clients-table .btn-edit').forEach(b=>b.onclick = ()=> openClientModal(b.dataset.id));
+			$$('#clients-table .btn-delete').forEach(b=>b.onclick = ()=> { if(confirm('Eliminar cliente?')) deleteClient(b.dataset.id) });
+			// actualizar métricas al renderizar clientes
+			computeMetrics();
+		}
+
+		function openClientModal(id){
+			editingClientId = id || null;
+			const modal = $('#modal-client');
+			$('#modal-client-title').textContent = id ? 'Editar cliente' : 'Nuevo cliente';
+			const form = $('#form-client');
+			form.reset();
+			if(id){
+				const item = loadClients().find(x=>x.id==id);
+				if(item){
+					form.name.value = item.name || '';
+					form.cedula.value = item.cedula || ''; // cargamos cedula al editar
+					form.phone.value = item.phone || '';
+					form.email.value = item.email || '';
+					form.address.value = item.address || '';
+				}
+			}
+			modal.classList.add('show');
+		}
+
+		function saveClientFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+			const list = loadClients();
+			if(editingClientId){
+				const idx = list.findIndex(x=>x.id==editingClientId);
+				if(idx>-1){
+					list[idx] = {...list[idx],
+						name:f.name.value,
+						cedula: f.cedula.value, // guardamos/actualizamos cedula
+						phone:f.phone.value,
+						email:f.email.value,
+						address:f.address.value
+					};
+				}
+			} else {
+				const item = {
+					id: Date.now().toString().slice(-6),
+					name:f.name.value,
+					cedula: f.cedula.value, // guardamos cedula al crear
+					phone:f.phone.value,
+					email:f.email.value,
+					address:f.address.value
+				};
+				list.unshift(item);
+			}
+			saveClients(list);
+			closeModal('#modal-client');
+			renderClients();
+		}
+
+		function deleteClient(id){
+			const list = loadClients().filter(x=>x.id!=id);
+			saveClients(list);
+			renderClients();
+		}
+
+		// Helpers para clientes
+		function populateClientSelect(){
+			const sel = document.querySelector('#form-order select[name="clientId"]');
+			const clients = loadClients();
+			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
+			clients.forEach(c => {
+				const opt = document.createElement('option');
+				opt.value = c.id; opt.textContent = c.name;
+				sel.appendChild(opt);
+			});
+		}
+		function findClientById(id){ return loadClients().find(c=>c.id==id); }
+
+		// Equipments: hoja de vida por serial
+		function upsertEquipmentFromOrder(order){
+			if(!order.serial) return;
+			const list = loadEquipments();
+			let eq = list.find(e => e.serial && e.serial.toLowerCase() === order.serial.toLowerCase());
+			const entry = {
+				orderId: order.id,
+				date: order.date || new Date().toISOString(),
+				clientId: order.clientId,
+				brand: order.brand,
+				model: order.model,
+				accessories: order.accessories,
+				failure: order.failure,
+				technician: order.technician,
+				notes: order.notes,
+				status: order.status || 'ingresado'
+			};
+			if(eq){
+				eq.brand = order.brand || eq.brand;
+				eq.model = order.model || eq.model;
+				eq.clientId = order.clientId || eq.clientId;
+				eq.history = eq.history || [];
+				eq.history.unshift(entry);
+			} else {
+				eq = {
+					id: Date.now().toString().slice(-6),
+					serial: order.serial,
+					brand: order.brand,
+					model: order.model,
+					clientId: order.clientId,
+					history: [entry]
+				};
+				list.unshift(eq);
+			}
+			saveEquipments(list);
+		}
+
+		// Export / Import (incluye órdenes, clientes, equipos)
+		function exportData(){
+			const data = { orders: loadOrders(), clients: loadClients(), equipments: loadEquipments(), transactions: loadTransactions(), exportedAt: new Date().toISOString() };
+			const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url; a.download = 'mipc_data.json'; a.click();
+			URL.revokeObjectURL(url);
+		}
+		function importDataFile(e){
+			const file = e.target.files[0];
+			if(!file) return;
+			const reader = new FileReader();
+			reader.onload = ev => {
+				try {
+					const data = JSON.parse(ev.target.result);
+					if(Array.isArray(data.orders)) saveOrders(data.orders);
+					if(Array.isArray(data.clients)) saveClients(data.clients);
+					if(Array.isArray(data.equipments)) saveEquipments(data.equipments);
+					if(Array.isArray(data.transactions)) saveTransactions(data.transactions);
+					alert('Importación completada');
+					renderOrders(); renderClients();
+					renderFinance(); // también actualizar finanzas después de importar
+				} catch(err){
+					alert('Archivo inválido');
+				}
+			};
+			reader.readAsText(file);
+			e.target.value = '';
+		}
+
+		// Exportar órdenes a PDF (usa jsPDF)
+		function exportOrdersPDF(){
+			const orders = loadOrders();
+			if(!orders || orders.length===0) return alert('No hay órdenes para exportar.');
+			const clients = loadClients();
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({unit:'pt', format:'letter'});
+			const margin = 40;
+			let y = 40;
+			const lineHeight = 14;
+			const pageHeight = doc.internal.pageSize.height;
+			doc.setFontSize(14);
+			doc.text('Órdenes - Mipc Computadores', margin, y);
+			y += 20;
+			doc.setFontSize(10);
+
+			// encabezado de columnas (simple)
+			const cols = ['ID','Cliente','Marca','Modelo','Serie','Estado','Técnico','Fecha'];
+			const colWidths = [40,120,60,60,80,80,80,100]; // aproximado
+			const startX = margin;
+
+			function printRow(values){
+				let x = startX;
+				for(let i=0;i<values.length;i++){
+					const txt = (values[i]===null||values[i]===undefined)?'':String(values[i]);
+					doc.text(truncateText(txt, Math.floor(colWidths[i]/6)), x, y);
+					x += colWidths[i];
+				}
+				y += lineHeight;
+			}
+
+			// cabecera de tabla
+			printRow(cols);
+			doc.setLineWidth(0.5);
+			doc.line(margin, y-8, pageHeight - margin, y-8);
+
+			orders.forEach((o, idx)=>{
+				const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
+				const statusLabel = ORDER_STATUSES[o.status || 'ingresado'] || (o.status||'');
+				const row = [
+					o.id,
+					client.name,
+					o.brand || '',
+					o.model || '',
+					o.serial || '',
+					statusLabel,
+					o.technician || '',
+					o.date ? new Date(o.date).toLocaleString() : ''
+				];
+				// controlar salto de página
+				if(y + lineHeight > pageHeight - margin){
+					doc.addPage();
+					y = margin;
+				}
+				printRow(row);
+			});
+
+			doc.save('ordenes_mipc.pdf');
+
+			function truncateText(str, maxChars){
+				if(!str) return '';
+				if(str.length <= maxChars) return str;
+				return str.slice(0, maxChars-3) + '...';
+			}
+		}
+
+		// helpers
+		function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+		// Modal: ver hoja de vida del equipo
+		function openEquipmentModal(serial){
+			const modal = $('#modal-equipment');
+			$('#modal-equipment-title').textContent = `Hoja de vida - ${serial}`;
+			const container = $('#equipment-history');
+			container.innerHTML = '';
+			const list = loadEquipments();
+			const eq = list.find(e => e.serial && e.serial.toLowerCase() === serial.toLowerCase());
+			if(!eq){
+				container.innerHTML = '<div class="history-item">No hay historial para este número de serie.</div>';
+			} else {
+				eq.history = eq.history || [];
+				eq.history.forEach(h=>{
+					const client = findClientById(h.clientId) || {name:'--'};
+					const div = document.createElement('div');
+					div.className = 'history-item';
+					div.innerHTML = `<strong>${new Date(h.date).toLocaleString()}</strong> — ${escapeHtml(h.status||'')} — ${escapeHtml(h.failure||'')}<br><span class="small">Cliente: ${escapeHtml(client.name)} — Técnico: ${escapeHtml(h.technician||'')}</span>`;
+					container.appendChild(div);
+				});
+			}
+			modal.classList.add('show');
+		}
+
+		// Generar link de WhatsApp para una orden
+		function generateWhatsAppLink(order){
+			const client = findClientById(order.clientId) || {};
+			let phone = client.phone || '';
+			const normalized = normalizePhone(phone);
+			if(!normalized){
+				alert('Teléfono del cliente no disponible para enviar WhatsApp.');
+				return null;
+			}
+			const name = client.name || 'cliente';
+			const brand = order.brand || '';
+			const model = order.model || '';
+			const serial = order.serial || '';
+			// enlace de aprobación (se usa el id de la orden para diferenciar)
+			const approvalLink = `https://tuulapp.com/1/?i=${encodeURIComponent(order.id)}`;
+			const msg = `Hola ${name}, Bienvenido a Mipc! Gracias por preferirnos. Tu equipo ingreso a nuestro taller, Marca: ${brand}, Modelo: ${model}, Serie: ${serial}, puedes ver los detalles en ${approvalLink}`;
+			return `https://api.whatsapp.com/send?phone=${normalized}&text=${encodeURIComponent(msg)}&type=phone_number&app_absent=0`;
+		}
+
+		// Abrir WhatsApp para la orden (usa siempre el teléfono guardado en el cliente y prefijo 57)
+		function openWhatsApp(id){
+			const order = loadOrders().find(o=>o.id==id);
+			if(!order) return alert('Orden no encontrada');
+			const link = generateWhatsAppLink(order);
+			if(!link) return;
+			window.open(link, '_blank');
+		}
+
+		// Normaliza teléfono: elimina caracteres no numéricos y asegura prefijo '57' sin pedir nada al usuario.
+		function normalizePhone(phone){
+			phone = (phone||'').replace(/\D/g,'');
+			if(!phone) return null;
+			// eliminar ceros iniciales
+			phone = phone.replace(/^0+/, '');
+			// si no empieza con 57, agregarlo
+			if(!phone.startsWith('57')) phone = '57' + phone;
+			return phone;
+		}
+
+		// Finanzas: renderizado de transacciones
+		function renderFinance(){
+			const tbody = $('#transactions-table tbody');
+			const items = loadTransactions();
+			tbody.innerHTML = '';
+			let totalIncome = 0, totalExpense = 0;
+			// obtener filtros
+			const typeFilter = ($('#type-filter') && $('#type-filter').value) || '';
+			const categoryFilter = ($('#category-filter') && $('#category-filter').value) || '';
+			const filtered = items.filter(t=>{
+				if(typeFilter && t.type !== typeFilter) return false;
+				if(categoryFilter && t.category !== categoryFilter) return false;
+				return true;
+			});
+			filtered.forEach(t=>{
+				if(t.type==='income') totalIncome += Number(t.amount||0);
+				else totalExpense += Number(t.amount||0);
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td>${t.id}</td>
+					<td>${t.type==='income'?'Ingreso':'Gasto'}</td>
+					<td>${formatCurrency(Number(t.amount||0))}</td>
+					<td>${escapeHtml(t.category||'')}</td>
+					<td>${t.date || ''}</td>
+					<td>${escapeHtml(t.notes||'')}</td>
+					<td>
+						<button type="button" class="btn btn-delete" data-id="${t.id}">Eliminar</button> <!-- added type -->
+					</td>
+				`;
+				tbody.appendChild(tr);
+			});
+			// bind delete
+			$$('#transactions-table .btn-delete').forEach(b=> b.onclick = ()=> { if(confirm('Eliminar transacción?')) deleteTransaction(b.dataset.id) });
+			// resumen
+			const summary = $('#finance-summary');
+			const balance = totalIncome - totalExpense;
+			if(summary) summary.textContent = `Ingresos: ${formatCurrency(totalIncome)} — Gastos: ${formatCurrency(totalExpense)} — Saldo: ${formatCurrency(balance)}`;
+			// actualizar panel de métricas
+			computeMetrics();
+		}
+
+		function saveTransactionFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+			const list = loadTransactions();
+			const item = {
+				id: Date.now().toString().slice(-6),
+				type: f.type.value,
+				amount: Number(f.amount.value || 0),
+				category: f.category.value,
+				date: f.date.value || new Date().toISOString().slice(0,10),
+				notes: f.notes.value
+			};
+			list.unshift(item);
+			saveTransactions(list);
+			f.reset();
+			renderFinance();
+		}
+
+		function deleteTransaction(id){
+			const list = loadTransactions().filter(x=>x.id!=id);
+			saveTransactions(list);
+			renderFinance();
+		}
+
+		function formatCurrency(v){
+			try {
+				return new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:2 }).format(v);
+			} catch(e){
+				return (v||0).toFixed(2);
+			}
+		}
+
+		// nuevas métricas
+		function computeMetrics(){
+			const tx = loadTransactions();
+			const orders = loadOrders();
+			const clients = loadClients();
+			let income = 0, expense = 0;
+			tx.forEach(t => {
+				if(t.type === 'income') income += Number(t.amount||0);
+				else expense += Number(t.amount||0);
+			});
+			const balance = income - expense;
+			const txCount = tx.length;
+			const avgTx = txCount ? ((income + expense) / txCount) : 0;
+			// conteo por estado de órdenes
+			const statusCounts = {};
+			Object.keys(ORDER_STATUSES).forEach(k => statusCounts[k] = 0);
+			orders.forEach(o => {
+				const s = o.status || 'ingresado';
+				statusCounts[s] = (statusCounts[s]||0) + 1;
+			});
+			// construir tarjeta de métricas simple
+			const container = document.getElementById('finance-metrics');
+			if(!container) return;
+			container.innerHTML = `
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
+					<div class="small">Ingresos</div>
+					<div style="font-weight:700">${formatCurrency(income)}</div>
+				</div>
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
+					<div class="small">Gastos</div>
+					<div style="font-weight:700">${formatCurrency(expense)}</div>
+				</div>
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
+					<div class="small">Saldo</div>
+					<div style="font-weight:700">${formatCurrency(balance)}</div>
+				</div>
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
+					<div class="small">Transacciones</div>
+					<div style="font-weight:700">${txCount}</div>
+					<div class="small">Promedio: ${formatCurrency(avgTx)}</div>
+				</div>
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:180px">
+					<div class="small">Órdenes</div>
+					<div style="font-weight:700">${orders.length}</div>
+					<div class="small">Clientes: ${clients.length}</div>
+				</div>
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:220px">
+					<div class="small">Desglose por estado (órdenes)</div>
+					<div style="font-weight:600;margin-top:6px">
+						${Object.keys(ORDER_STATUSES).map(k => `${ORDER_STATUSES[k]}: ${statusCounts[k]||0}`).join(' — ')}
+					</div>
+				</div>
+			`;
+		}
+	</script>
+</body>
+</html>
