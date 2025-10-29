@@ -33,6 +33,13 @@
 		.footer-note{margin-top:12px;color:var(--muted);font-size:13px}
 		.small{font-size:13px;color:var(--muted)}
 
+		/* estilos para galería de imágenes */
+		.image-preview-container{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+		.image-preview{position:relative;width:100px;height:100px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+		.image-preview img{width:100%;height:100%;object-fit:cover}
+		.image-preview .remove-img{position:absolute;top:2px;right:2px;background:#ff5b6b;color:#fff;border:0;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px}
+		.image-preview .remove-img:hover{background:#ff3b4b}
+
 		/* nuevo: estilos para badges de estado */
 		.status-badge{display:inline-block;padding:4px 8px;border-radius:12px;font-size:12px;color:#06121a}
 		.status-ingresado{background:#c7ff00}
@@ -40,18 +47,17 @@
 		.status-espera_entrega{background:#ffcc33;color:#07121a}
 		.status-entregado{background:#7af0a5;color:#07121a}
 
+		/* nuevo: estilos para badges de estado de pago */
+		.payment-badge{display:inline-block;padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600}
+		.payment-paid{background:#7af0a5;color:#07121a}
+		.payment-unpaid{background:#ff5b6b;color:#fff}
+		.btn-toggle-payment{background:#ffa726;color:#07121a;font-size:12px;padding:6px 10px}
+
 		/* pequeño ajuste: botones dentro de tablas también usan .btn para aspecto */
 		button.btn{font-size:13px;line-height:1;display:inline-block}
 
 		/* modal historial */
 		.history-list{max-height:320px;overflow:auto;padding:8px;border-radius:6px;background:#031419;color:#dff0ea}
-
-		/* estilos para miniaturas de imágenes en tabla y modal */
-		.photos-cell img.thumb-img{width:44px;height:30px;object-fit:cover;margin-right:6px;border-radius:4px;cursor:pointer;border:1px solid rgba(255,255,255,.04)}
-		.order-image-preview{display:flex;gap:6px;flex-wrap:wrap}
-		.order-image-preview .thumb{position:relative;display:inline-block}
-		.order-image-preview .thumb img{width:80px;height:60px;object-fit:cover;border-radius:6px}
-		.order-image-preview .thumb button{position:absolute;right:2px;top:2px;padding:2px 6px;background:#ff5b6b;color:#fff;border-radius:4px;border:0;cursor:pointer;font-size:12px}
 
 		@media(max-width:800px){.sidebar{display:none}.modal .panel{width:95%}}
 	</style>
@@ -73,8 +79,8 @@
 			<div class="header">
 				<h2 id="view-title">Órdenes</h2>
 				<div class="controls">
-					<button type="button" class="btn" id="btn-add-order">+ Nueva orden</button> <!-- added type -->
-					<button type="button" class="btn" id="btn-add-client" style="display:none;background:#3bb4ff;color:#04121a">+ Nuevo cliente</button> <!-- added type -->
+					<button class="btn" id="btn-add-order">+ Nueva orden</button>
+					<button class="btn" id="btn-add-client" style="display:none;background:#3bb4ff;color:#04121a">+ Nuevo cliente</button>
 				</div>
 			</div>
 
@@ -90,13 +96,19 @@
 						<option value="espera_entrega">En espera de entrega</option>
 						<option value="entregado">Entregado</option>
 					</select>
+					<!-- nuevo: filtro por estado de pago -->
+					<select id="payment-filter" style="margin-left:8px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+						<option value="">Todos (pagos)</option>
+						<option value="paid">Pagadas</option>
+						<option value="unpaid">No pagadas</option>
+					</select>
 				</div>
 
 				<table id="orders-table" aria-label="Órdenes">
 					<thead>
 						<tr>
 							<th>ID</th><th>Cliente</th><th>Marca</th><th>Modelo</th><th>Serie</th><th>Accesorios</th><th>Falla</th>
-							<th>Estado</th><th>Técnico</th><th>Fecha</th><th>Fotos</th><th>Acciones</th> <!-- agregado columna Fotos -->
+							<th>Estado</th><th>Precio</th><th>Pago</th><th>Imágenes</th><th>Técnico</th><th>Fecha</th><th>Acciones</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -108,7 +120,7 @@
 
 			<section id="clients-section" class="card" style="display:none;margin-top:12px">
 				<h3>Clientes</h3>
-				<button type="button" class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button> <!-- added type -->
+				<button class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button>
 				<table id="clients-table">
 					<thead><tr><th>ID</th><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
 					<tbody></tbody>
@@ -165,10 +177,10 @@
 
 			<section id="settings-section" class="card" style="display:none;margin-top:12px">
 				<h3>Configuración</h3>
-				<button type="button" class="btn" id="export-data">Exportar datos (.json)</button> <!-- added type -->
-				<button type="button" class="btn" id="import-data" style="background:#3bb4ff;color:#04121a">Importar</button> <!-- added type -->
+				<button class="btn" id="export-data">Exportar datos (.json)</button>
+				<button class="btn" id="import-data" style="background:#3bb4ff;color:#04121a">Importar</button>
 				<!-- nuevo: exportar PDF de órdenes -->
-				<button type="button" class="btn" id="export-pdf" style="margin-left:8px;background:#7af0a5;color:#04121a">Exportar PDF (Órdenes)</button> <!-- added type -->
+				<button class="btn" id="export-pdf" style="margin-left:8px;background:#7af0a5;color:#04121a">Exportar PDF (Órdenes)</button>
 				<input type="file" id="import-file" accept="application/json" style="display:none">
 				<div class="footer-note" style="margin-top:12px">Equipos guardados en hoja de vida por número de serie.</div>
 			</section>
@@ -203,17 +215,6 @@
 					<input name="serial" placeholder="Número de serie (único)" required>
 					<input name="model" placeholder="Modelo">
 				</div>
-
-				<!-- agregado: subida de imágenes y preview -->
-				<div class="form-row" style="flex-direction:column">
-					<label class="small" style="margin:0 0 6px 0">Fotos del equipo (puedes subir varias)</label>
-					<div style="display:flex;gap:8px;align-items:center">
-						<input id="order-images-input" type="file" accept="image/*" multiple>
-						<span class="small" style="color:var(--muted)">Se guardan en local (data URLs)</span>
-					</div>
-					<div id="order-images-preview" class="order-image-preview" style="margin-top:8px"></div>
-				</div>
-
 				<div class="form-row">
 					<input name="accessories" placeholder="Accesorios (ej: cargador, funda)">
 					<textarea name="failure" placeholder="Falla reportada" rows="1" required style="flex:2"></textarea>
@@ -221,7 +222,26 @@
 
 				<div class="form-row">
 					<input name="technician" placeholder="Técnico asignado">
-					<input name="notes" placeholder="Notas internas">
+					<input name="price" type="number" step="0.01" placeholder="Precio" style="flex:1">
+					<!-- nuevo: selector de estado de pago -->
+					<select name="paid" style="flex:1">
+						<option value="false">No pagado</option>
+						<option value="true">Pagado</option>
+					</select>
+				</div>
+
+				<div class="form-row">
+					<input name="notes" placeholder="Notas internas" style="flex:1">
+				</div>
+
+				<!-- nuevo: campo para imágenes -->
+				<div class="form-row" style="flex-direction:column;align-items:flex-start">
+					<label style="color:var(--muted);font-size:13px;margin-bottom:4px">
+						Imágenes del equipo: 
+						<span id="image-count" style="color:var(--accent);font-weight:600">(0 imágenes)</span>
+					</label>
+					<input type="file" id="order-images" accept="image/*" multiple style="padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+					<div id="image-preview-container" class="image-preview-container"></div>
 				</div>
 
 				<div style="display:flex;gap:8px;justify-content:flex-end">
@@ -296,7 +316,6 @@
 		// estado
 		let editingOrderId = null;
 		let editingClientId = null;
-		let currentOrderImages = []; // nuevas imágenes (dataURLs) temporales para el modal
 
 		// init
 		document.addEventListener('DOMContentLoaded', ()=> {
@@ -330,12 +349,12 @@
 			$('#form-order').addEventListener('submit', saveOrderFromForm);
 			$('#form-client').addEventListener('submit', saveClientFromForm);
 
-			// nuevo: manejo input imágenes en modal de orden
-			const imgInput = $('#order-images-input');
-			if(imgInput) imgInput.addEventListener('change', handleOrderImagesInput);
+			// nuevo: manejo de imágenes
+			$('#order-images').addEventListener('change', handleImageUpload);
 
 			$('#filter-input').addEventListener('input', renderOrders);
 			$('#status-filter').addEventListener('change', renderOrders);
+			$('#payment-filter').addEventListener('change', renderOrders); // nuevo: filtro de pago
 
 			$('#export-data').addEventListener('click', exportData);
 			$('#import-data').addEventListener('click', ()=> $('#import-file').click());
@@ -411,13 +430,17 @@
 			}
 		}
 
-		// Render órdenes (actualizado: botones ahora con type="button" y PDF button fix)
+		// Render órdenes
 		function renderOrders(){
 			const tbody = $('#orders-table tbody');
 			const filter = $('#filter-input').value.toLowerCase().trim();
 			const statusFilter = $('#status-filter').value;
+			const paymentFilter = $('#payment-filter').value; // nuevo
 			const items = loadOrders().filter(o=>{
 				if(statusFilter && (o.status||'ingresado') !== statusFilter) return false;
+				// nuevo: filtro de pago
+				if(paymentFilter === 'paid' && !o.paid) return false;
+				if(paymentFilter === 'unpaid' && o.paid) return false;
 				if(!filter) return true;
 				const client = findClientById(o.clientId) || {};
 				return [client.name, o.brand, o.model, o.serial, o.accessories, o.failure, ORDER_STATUSES[o.status]||''].join(' ').toLowerCase().includes(filter);
@@ -428,7 +451,13 @@
 				const statusKey = o.status || 'ingresado';
 				const statusLabel = ORDER_STATUSES[statusKey] || statusKey;
 				const statusClass = `status-${statusKey}`;
-				const photosHtml = (o.images && o.images.length) ? o.images.map((src, i) => `<img src="${src}" class="thumb-img" data-id="${o.id}" data-idx="${i}" alt="img">`).join('') : '';
+				const imageCount = (o.images && o.images.length) ? o.images.length : 0;
+				const priceDisplay = o.price ? formatCurrency(Number(o.price)) : '--';
+				// nuevo: estado de pago
+				const isPaid = o.paid === true;
+				const paymentBadge = isPaid 
+					? '<span class="payment-badge payment-paid">Pagado</span>' 
+					: '<span class="payment-badge payment-unpaid">No pagado</span>';
 				const tr = document.createElement('tr');
 				tr.innerHTML = `
 					<td>${o.id}</td>
@@ -439,9 +468,11 @@
 					<td>${escapeHtml(o.accessories||'')}</td>
 					<td>${escapeHtml(o.failure||'')}</td>
 					<td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+					<td>${priceDisplay}</td>
+					<td>${paymentBadge}</td>
+					<td style="text-align:center">${imageCount}</td>
 					<td>${escapeHtml(o.technician||'')}</td>
 					<td>${new Date(o.date).toLocaleString()}</td>
-					<td class="photos-cell">${photosHtml}</td> <!-- miniaturas -->
 					<td class="actions">
 						<select class="inline-status" data-id="${o.id}">
 							<option value="ingresado"${statusKey==='ingresado'?' selected':''}>Ingresado</option>
@@ -449,12 +480,11 @@
 							<option value="espera_entrega"${statusKey==='espera_entrega'?' selected':''}>En espera de entrega</option>
 							<option value="entregado"${statusKey==='entregado'?' selected':''}>Entregado</option>
 						</select>
-						<button type="button" class="btn btn-edit" data-id="${o.id}">Editar</button> <!-- added type -->
-						<button type="button" class="btn btn-delete" data-id="${o.id}">Eliminar</button> <!-- added type -->
-						<!-- botón nuevo: generar PDF de esta orden (fixed duplicate class attr) -->
-						<button type="button" class="btn btn-pdf" style="background:#071a2a;color:#7af0a5" data-id="${o.id}">PDF</button>
-						<!-- botón nuevo: enviar WhatsApp -->
-						<button type="button" class="btn btn-whatsapp" data-id="${o.id}" style="background:#25D366;color:#06121a">WhatsApp</button> <!-- added type -->
+						<button class="btn btn-toggle-payment" data-id="${o.id}" title="Cambiar estado de pago">${isPaid ? '💰 Pagado' : '💳 Marcar pagado'}</button>
+						<button class="btn btn-edit" data-id="${o.id}">Editar</button>
+						<button class="btn btn-delete" data-id="${o.id}">Eliminar</button>
+						<button class="btn" style="background:#071a2a;color:#7af0a5" data-id="${o.id}" class="btn-pdf">PDF</button>
+						<button class="btn btn-whatsapp" data-id="${o.id}" style="background:#25D366;color:#06121a">WhatsApp</button>
 					</td>
 				`;
 				tbody.appendChild(tr);
@@ -466,6 +496,8 @@
 			$$('select.inline-status').forEach(s=>{
 				s.onchange = ()=> updateOrderStatus(s.dataset.id, s.value);
 			});
+			// nuevo: toggle de pago
+			$$('.btn-toggle-payment').forEach(b => b.onclick = ()=> toggleOrderPayment(b.dataset.id));
 
 			// botón PDF por orden
 			$$('button[data-id]').filter(b => b.classList.contains('btn') && b.textContent === 'PDF')
@@ -479,12 +511,6 @@
 				const serial = b.dataset.serial;
 				if(!serial) return alert('Serie inválida');
 				openEquipmentModal(serial);
-			});
-
-			// abrir imagen en nueva pestaña al clickear miniatura
-			$$('.thumb-img').forEach(img => img.onclick = ()=> {
-				const src = img.getAttribute('src');
-				if(src) window.open(src, '_blank');
 			});
 
 			$('#orders-count').textContent = `Mostrando ${items.length} registros`;
@@ -519,6 +545,7 @@
 				`ID: ${order.id}`,
 				`Fecha: ${order.date ? new Date(order.date).toLocaleString() : ''}`,
 				`Estado: ${ORDER_STATUSES[order.status||'ingresado'] || order.status}`,
+				`Pago: ${order.paid ? 'Pagado' : 'No pagado'}`, // nuevo
 				'',
 				'Cliente:',
 				`  Nombre: ${client.name}`,
@@ -533,6 +560,8 @@
 				'',
 				`Falla reportada: ${order.failure||''}`,
 				`Técnico: ${order.technician||''}`,
+				`Precio: ${order.price ? formatCurrency(Number(order.price)) : 'No especificado'}`,
+				`Imágenes adjuntas: ${(order.images && order.images.length) || 0}`,
 				`Notas: ${order.notes||''}`
 			];
 
@@ -571,9 +600,10 @@
 			const form = $('#form-order');
 			form.reset();
 			populateClientSelect();
-
-			// reset imágenes temporales
+			// limpiar imágenes previas
 			currentOrderImages = [];
+			$('#image-preview-container').innerHTML = '';
+			$('#order-images').value = '';
 
 			if(id){
 				const item = loadOrders().find(x=>x.id==id);
@@ -585,55 +615,85 @@
 					form.accessories.value = item.accessories || '';
 					form.failure.value = item.failure || '';
 					form.technician.value = item.technician || '';
+					form.price.value = item.price || '';
 					form.notes.value = item.notes || '';
 					form.status.value = item.status || 'ingresado';
-					// cargar imágenes existentes si las hay
-					if(Array.isArray(item.images)) currentOrderImages = item.images.slice();
+					form.paid.value = item.paid ? 'true' : 'false'; // nuevo
+					// cargar imágenes existentes
+					if(item.images && Array.isArray(item.images)){
+						currentOrderImages = [...item.images];
+						renderImagePreviews();
+					}
 				}
 			}
-			renderOrderImagePreviews();
 			modal.classList.add('show');
-			const sel = form.querySelector('select[name="clientId"]');
-			if(sel) sel.focus();
+			form.querySelector('select[name="clientId"]').focus();
 		}
+		function closeModal(sel){ document.querySelector(sel).classList.remove('show'); editingOrderId = null; editingClientId = null; }
 
-		// Handler: leer archivos seleccionados y guardarlos como dataURLs
-		function handleOrderImagesInput(e){
-			const files = Array.from(e.target.files || []);
-			if(!files.length) return;
+		// nueva variable global para almacenar imágenes temporalmente
+		let currentOrderImages = [];
+
+		// nueva función: manejar carga de imágenes
+		function handleImageUpload(e){
+			const files = Array.from(e.target.files);
+			if(files.length === 0) return;
+			
 			files.forEach(file => {
+				if(!file.type.startsWith('image/')) return;
+				
+				// limitar tamaño (máx 2MB por imagen)
+				if(file.size > 2 * 1024 * 1024){
+					alert(`La imagen ${file.name} es muy grande. Máximo 2MB por imagen.`);
+					return;
+				}
+
 				const reader = new FileReader();
-				reader.onload = ev => {
-					currentOrderImages.push(ev.target.result);
-					renderOrderImagePreviews();
+				reader.onload = (ev) => {
+					currentOrderImages.push({
+						data: ev.target.result,
+						name: file.name,
+						date: new Date().toISOString()
+					});
+					renderImagePreviews();
 				};
 				reader.readAsDataURL(file);
 			});
-			// limpiar input para permitir subir mismos archivos luego si se desea
+			
+			// limpiar input para permitir seleccionar las mismas imágenes nuevamente
 			e.target.value = '';
 		}
 
-		function renderOrderImagePreviews(){
-			const container = $('#order-images-preview');
-			if(!container) return;
+		// nueva función: renderizar vista previa de imágenes
+		function renderImagePreviews(){
+			const container = $('#image-preview-container');
 			container.innerHTML = '';
-			currentOrderImages.forEach((src, idx) => {
+			
+			currentOrderImages.forEach((img, index) => {
 				const div = document.createElement('div');
-				div.className = 'thumb';
-				div.innerHTML = `<img src="${src}" alt="img${idx}"><button type="button" data-idx="${idx}">x</button>`;
+				div.className = 'image-preview';
+				div.innerHTML = `
+					<img src="${img.data}" alt="${escapeHtml(img.name)}">
+					<button type="button" class="remove-img" data-index="${index}">✕</button>
+				`;
 				container.appendChild(div);
 			});
-			// bind para eliminar preview
-			$$('#order-images-preview .thumb button').forEach(b => b.onclick = ()=> {
-				const i = Number(b.dataset.idx);
-				removeImageFromCurrent(i);
-			});
-		}
 
-		function removeImageFromCurrent(index){
-			if(index<0 || index>=currentOrderImages.length) return;
-			currentOrderImages.splice(index,1);
-			renderOrderImagePreviews();
+			// actualizar contador de imágenes
+			const countEl = $('#image-count');
+			if(countEl){
+				const count = currentOrderImages.length;
+				countEl.textContent = `(${count} ${count === 1 ? 'imagen' : 'imágenes'})`;
+			}
+
+			// bind eliminar imagen
+			$$('.remove-img').forEach(btn => {
+				btn.onclick = () => {
+					const index = parseInt(btn.dataset.index);
+					currentOrderImages.splice(index, 1);
+					renderImagePreviews();
+				};
+			});
 		}
 
 		function saveOrderFromForm(e){
@@ -652,9 +712,11 @@
 						accessories: f.accessories.value,
 						failure: f.failure.value,
 						technician: f.technician.value,
+						price: f.price.value || null,
 						notes: f.notes.value,
 						status: f.status ? f.status.value || f.status : (list[idx].status || 'ingresado'),
-						images: currentOrderImages.slice() // guardar imágenes
+						paid: f.paid.value === 'true', // nuevo
+						images: currentOrderImages
 					};
 					upsertEquipmentFromOrder(list[idx]);
 				}
@@ -668,10 +730,12 @@
 					accessories: f.accessories.value,
 					failure: f.failure.value,
 					technician: f.technician.value,
+					price: f.price.value || null,
 					notes: f.notes.value,
 					status: f.status ? f.status.value || 'ingresado' : 'ingresado',
+					paid: f.paid.value === 'true', // nuevo
 					date: new Date().toISOString(),
-					images: currentOrderImages.slice() // guardar imágenes
+					images: currentOrderImages
 				};
 				list.unshift(item);
 				upsertEquipmentFromOrder(item);
@@ -693,7 +757,7 @@
 			renderOrders();
 		}
 
-		// Clients (antes "accounts") - botones editar/eliminar con type="button"
+		// Clients (antes "accounts")
 		function renderClients(){
 			const tbody = $('#clients-table tbody');
 			const items = loadClients();
@@ -707,8 +771,8 @@
 					<td>${escapeHtml(c.phone||'')}</td>
 					<td>${escapeHtml(c.email||'')}</td>
 					<td>
-						<button type="button" class="btn btn-edit" data-id="${c.id}">Editar</button> <!-- added type -->
-						<button type="button" class="btn btn-delete" data-id="${c.id}">Eliminar</button> <!-- added type -->
+						<button class="btn btn-edit" data-id="${c.id}">Editar</button>
+						<button class="btn btn-delete" data-id="${c.id}">Eliminar</button>
 					</td>
 				`;
 				tbody.appendChild(tr);
@@ -742,6 +806,7 @@
 			e.preventDefault();
 			const f = e.target;
 			const list = loadClients();
+			let newClientId = null; // <-- añadido: guardamos id si es nuevo
 			if(editingClientId){
 				const idx = list.findIndex(x=>x.id==editingClientId);
 				if(idx>-1){
@@ -763,8 +828,24 @@
 					address:f.address.value
 				};
 				list.unshift(item);
+				newClientId = item.id; // <-- añadido: capturamos id del nuevo cliente
 			}
 			saveClients(list);
+
+			// <-- añadido: repoblar select de clientes en el formulario de orden
+			populateClientSelect();
+
+			// si creamos un cliente nuevo, seleccionarlo automáticamente en el formulario de orden (si existe)
+			if(newClientId){
+				const orderSel = document.querySelector('#form-order select[name="clientId"]');
+				if(orderSel){
+					orderSel.value = newClientId;
+					// Si el modal de orden está abierto, darle foco al select para confirmar selección
+					const modalOrder = document.querySelector('#modal-order');
+					if(modalOrder && modalOrder.classList.contains('show')) orderSel.focus();
+				}
+			}
+
 			closeModal('#modal-client');
 			renderClients();
 		}
@@ -773,6 +854,8 @@
 			const list = loadClients().filter(x=>x.id!=id);
 			saveClients(list);
 			renderClients();
+			// <-- añadido: repoblar select de clientes para evitar opciones obsoletas
+			populateClientSelect();
 		}
 
 		// Helpers para clientes
@@ -872,9 +955,9 @@
 			y += 20;
 			doc.setFontSize(10);
 
-			// encabezado de columnas (simple)
-			const cols = ['ID','Cliente','Marca','Modelo','Serie','Estado','Técnico','Fecha'];
-			const colWidths = [40,120,60,60,80,80,80,100]; // aproximado
+			// encabezado de columnas (simple) - agregamos columna Pago
+			const cols = ['ID','Cliente','Marca','Modelo','Serie','Estado','Pago','Técnico','Fecha'];
+			const colWidths = [40,100,60,60,80,70,50,80,80]; // ajustado
 			const startX = margin;
 
 			function printRow(values){
@@ -895,6 +978,7 @@
 			orders.forEach((o, idx)=>{
 				const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
 				const statusLabel = ORDER_STATUSES[o.status || 'ingresado'] || (o.status||'');
+				const paymentLabel = o.paid ? 'Sí' : 'No'; // nuevo
 				const row = [
 					o.id,
 					client.name,
@@ -902,6 +986,7 @@
 					o.model || '',
 					o.serial || '',
 					statusLabel,
+					paymentLabel, // nuevo
 					o.technician || '',
 					o.date ? new Date(o.date).toLocaleString() : ''
 				];
@@ -961,9 +1046,32 @@
 			const brand = order.brand || '';
 			const model = order.model || '';
 			const serial = order.serial || '';
-			// enlace de aprobación (se usa el id de la orden para diferenciar)
-			const approvalLink = `https://tuulapp.com/1/?i=${encodeURIComponent(order.id)}`;
-			const msg = `Hola ${name}, Bienvenido a Mipc! Gracias por preferirnos. Tu equipo ingreso a nuestro taller, Marca: ${brand}, Modelo: ${model}, Serie: ${serial}, puedes ver los detalles en ${approvalLink}`;
+			const technician = order.technician || '';
+			const status = order.status || 'ingresado';
+			// enlace de detalles (puede usarse para seguimiento)
+			const detailLink = `https://tuulapp.com/1/?i=${encodeURIComponent(order.id)}`;
+
+			// Mensajes por estado
+			let msg = '';
+			switch(status){
+				case 'en_reparacion':
+					msg = `Hola ${name}, te informamos que tu equipo (${brand} ${model}, S/N: ${serial}) está en reparación. Nuestro técnico ${technician || 'asignado'} está trabajando en la evaluación y reparación. Te avisaremos cuando haya novedades.`;
+					break;
+				case 'espera_entrega':
+					msg = `Hola ${name}, tu equipo (${brand} ${model}, S/N: ${serial}) ya está listo y en espera de entrega en nuestro taller. Por favor pasa a recogerlo. Si necesitas coordinar la entrega, responde este mensaje.`;
+					break;
+				case 'entregado':
+					msg = `Hola ${name}, confirmamos que tu equipo (${brand} ${model}, S/N: ${serial}) ha sido entregado. Muchas gracias por confiar en Mipc Computadores. Si tienes alguna inquietud, contáctanos.`;
+					break;
+				case 'ingresado':
+				default:
+					msg = `Hola ${name}, tu equipo (${brand} ${model}, S/N: ${serial}) ha sido ingresado a nuestro taller. Puedes ver los detalles y seguimiento aquí: ${detailLink}. Pronto te informaremos sobre el estado.`;
+					break;
+			}
+
+			// añadir saludo breve y firma opcional
+			msg = `${msg} — Mipc Computadores`;
+
 			return `https://api.whatsapp.com/send?phone=${normalized}&text=${encodeURIComponent(msg)}&type=phone_number&app_absent=0`;
 		}
 
@@ -1013,7 +1121,7 @@
 					<td>${t.date || ''}</td>
 					<td>${escapeHtml(t.notes||'')}</td>
 					<td>
-						<button type="button" class="btn btn-delete" data-id="${t.id}">Eliminar</button> <!-- added type -->
+						<button class="btn btn-delete" data-id="${t.id}">Eliminar</button>
 					</td>
 				`;
 				tbody.appendChild(tr);
@@ -1076,9 +1184,13 @@
 			// conteo por estado de órdenes
 			const statusCounts = {};
 			Object.keys(ORDER_STATUSES).forEach(k => statusCounts[k] = 0);
+			// nuevo: contar órdenes pagadas vs no pagadas
+			let paidOrders = 0, unpaidOrders = 0;
 			orders.forEach(o => {
 				const s = o.status || 'ingresado';
 				statusCounts[s] = (statusCounts[s]||0) + 1;
+				if(o.paid) paidOrders++;
+				else unpaidOrders++;
 			});
 			// construir tarjeta de métricas simple
 			const container = document.getElementById('finance-metrics');
@@ -1105,6 +1217,7 @@
 					<div class="small">Órdenes</div>
 					<div style="font-weight:700">${orders.length}</div>
 					<div class="small">Clientes: ${clients.length}</div>
+					<div class="small">Pagadas: ${paidOrders} / No pagadas: ${unpaidOrders}</div>
 				</div>
 				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:220px">
 					<div class="small">Desglose por estado (órdenes)</div>
@@ -1113,6 +1226,62 @@
 					</div>
 				</div>
 			`;
+		}
+
+		// nueva función: cambiar estado de pago
+		function toggleOrderPayment(id){
+			const list = loadOrders();
+			const idx = list.findIndex(x=>x.id==id);
+			if(idx===-1) return;
+			
+			const order = list[idx];
+			const wasPaid = order.paid;
+			
+			// cambiar estado
+			list[idx].paid = !wasPaid;
+			saveOrders(list);
+			
+			// Si se marca como pagado Y tiene un precio, crear transacción financiera
+			if(!wasPaid && list[idx].paid && order.price && Number(order.price) > 0){
+				const client = findClientById(order.clientId) || {name:'Cliente'};
+				const transactions = loadTransactions();
+				
+				const transaction = {
+					id: Date.now().toString().slice(-6),
+					type: 'income',
+					amount: Number(order.price),
+					category: 'Servicios',
+					date: new Date().toISOString().slice(0,10),
+					notes: `Pago orden ${order.id} — ${client.name}`,
+					orderId: order.id // vincular transacción a la orden
+				};
+				
+				transactions.unshift(transaction);
+				saveTransactions(transactions);
+			}
+			
+			// Si se desmarca como pagado, eliminar la transacción vinculada
+			if(wasPaid && !list[idx].paid){
+				let transactions = loadTransactions();
+				// buscar y eliminar transacciones vinculadas a esta orden
+				const initialCount = transactions.length;
+				transactions = transactions.filter(t => {
+					// eliminar si está vinculada a esta orden O si las notas contienen "orden [id]"
+					const linkedByOrderId = t.orderId && t.orderId === order.id;
+					const linkedByNotes = t.notes && t.notes.includes(`orden ${order.id}`);
+					return !(linkedByOrderId || linkedByNotes);
+				});
+				
+				if(transactions.length < initialCount){
+					saveTransactions(transactions);
+					// mostrar confirmación visual
+					console.log(`Transacción eliminada para orden ${order.id}`);
+				}
+			}
+			
+			renderOrders();
+			renderFinance(); // actualizar finanzas
+			computeMetrics();
 		}
 	</script>
 </body>
