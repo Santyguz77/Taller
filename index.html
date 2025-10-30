@@ -293,7 +293,7 @@
 
 	<script>
 		// NUEVO: URL del API
-		const API_URL = "https://recommendations-pot-cowboy-magazines.trycloudflare.com/api";
+		const API_URL = "https://uncertainty-air-portion-media.trycloudflare.com/api";
 
 		// funciones reutilizables para comunicarse con el backend
 		async function loadTable(table) {
@@ -517,6 +517,7 @@
 							<option value="entregado"${statusKey==='entregado'?' selected':''}>Entregado</option>
 						</select>
 						<button class="btn btn-toggle-payment" data-id="${o.id}" title="Cambiar estado de pago">${isPaid ? '💰 Pagado' : '💳 Marcar pagado'}</button>
+						<button class="btn btn-copy-link" data-id="${o.id}" style="background:#9c27b0;color:#fff" title="Copiar enlace público">🔗 Link</button>
 						<button class="btn btn-edit" data-id="${o.id}">Editar</button>
 						<button class="btn btn-delete" data-id="${o.id}">Eliminar</button>
 						<button class="btn" style="background:#071a2a;color:#7af0a5" data-id="${o.id}" class="btn-pdf">PDF</button>
@@ -541,6 +542,9 @@
 
 			// botón WhatsApp por orden
 			$$('.btn-whatsapp').forEach(b => b.onclick = ()=> openWhatsApp(b.dataset.id));
+
+			// nuevo: copiar enlace público
+			$$('.btn-copy-link').forEach(b => b.onclick = async ()=> await copyPublicLink(b.dataset.id));
 
 			// abrir hoja de vida
 			$$('.btn-view-eq').forEach(b=> b.onclick = ()=> {
@@ -568,64 +572,263 @@
 			const orders = await loadOrders();
 			const order = orders.find(o=>o.id==id);
 			if(!order) return alert('Orden no encontrada');
+			
+			// generar token si no existe
+			if(!order.accessToken){
+				order.accessToken = generateAccessToken();
+				await saveOrders(orders);
+			}
+			
 			const client = (await loadClients()).find(c=>c.id==order.clientId) || {name:'--', phone:'', email:''};
+			const publicLink = getPublicOrderLink(order);
+			
 			const { jsPDF } = window.jspdf;
 			const doc = new jsPDF({unit:'pt', format:'letter'});
-			const margin = 40;
-			let y = margin;
-			doc.setFontSize(16);
-			doc.text('Orden de servicio - Mipc Computadores', margin, y);
-			y += 24;
+			const pageWidth = doc.internal.pageSize.width;
+			const pageHeight = doc.internal.pageSize.height;
+			const margin = 60;
+			const centerX = pageWidth / 2;
+			let y = margin + 20;
+			
+			// Cargar y agregar logo
+			try {
+				const logoImage = await loadImageFromUrl('./image.png');
+				const logoSize = 60; // Tamaño del logo
+				doc.addImage(logoImage, 'PNG', centerX - logoSize/2, y, logoSize, logoSize);
+				y += logoSize + 15;
+			} catch(err) {
+				console.error('Error cargando logo:', err);
+				// Fallback al logo tipográfico si no se puede cargar la imagen
+				doc.setFontSize(20);
+				doc.setFont(undefined, 'bold');
+				const titleWidth = doc.getTextWidth('MIPC COMPUTADORES');
+				doc.text('MIPC COMPUTADORES', centerX - titleWidth/2, y);
+				y += 30;
+			}
+			
+			// Título del documento
+			doc.setFontSize(18);
+			doc.setFont(undefined, 'bold');
+			doc.setTextColor(0, 0, 0); // Asegurar color negro
+			const serviceTitle = 'ORDEN DE SERVICIO';
+			const serviceTitleWidth = doc.getTextWidth(serviceTitle);
+			doc.text(serviceTitle, centerX - serviceTitleWidth/2, y);
+			y += 30;
+			
+			// Línea separadora
+			doc.setLineWidth(1);
+			doc.line(margin, y, pageWidth - margin, y);
+			y += 25;
+			
+			// Información en dos columnas
 			doc.setFontSize(11);
-
-			const lines = [
+			doc.setFont(undefined, 'normal');
+			
+			const leftColumn = margin + 20;
+			const rightColumn = centerX + 20;
+			const startY = y;
+			
+			// Columna izquierda - Información de la orden
+			y = startY;
+			doc.setFont(undefined, 'bold');
+			doc.text('INFORMACIÓN DE LA ORDEN', leftColumn, y);
+			y += 20;
+			doc.setFont(undefined, 'normal');
+			
+			const orderInfo = [
 				`ID: ${order.id}`,
 				`Fecha: ${order.date ? new Date(order.date).toLocaleString() : ''}`,
 				`Estado: ${ORDER_STATUSES[order.status||'ingresado'] || order.status}`,
 				`Pago: ${order.paid ? 'Pagado' : 'No pagado'}`,
-				'',
-				'Cliente:',
-				`  Nombre: ${client.name}`,
-				`  Teléfono: ${client.phone||''}`,
-				`  Email: ${client.email||''}`,
-				'',
-				'Equipo:',
-				`  Marca: ${order.brand||''}`,
-				`  Modelo: ${order.model||''}`,
-				`  Serie: ${order.serial||''}`,
-				`  Accesorios: ${order.accessories||''}`,
-				'',
-				`Falla reportada: ${order.failure||''}`,
-				`Técnico: ${order.technician||''}`,
 				`Precio: ${order.price ? formatCurrency(Number(order.price)) : 'No especificado'}`,
-				`Imágenes adjuntas: ${(order.images && order.images.length) || 0}`,
-				`Notas: ${order.notes||''}`
+				`Técnico: ${order.technician||'No asignado'}`
 			];
-
-			const pageHeight = doc.internal.pageSize.height;
-			const lineHeight = 14;
-			lines.forEach(line=>{
-				if(y + lineHeight > pageHeight - margin){
-					doc.addPage();
-					y = margin;
-				}
-				doc.text(wrapText(line, 90), margin, y);
-				y += lineHeight * (Array.isArray(wrapText(line,90)) ? wrapText(line,90).length : 1);
+			
+			orderInfo.forEach(line => {
+				doc.text(line, leftColumn, y);
+				y += 15;
 			});
+			
+			// Columna derecha - Información del cliente
+			y = startY;
+			doc.setFont(undefined, 'bold');
+			doc.text('INFORMACIÓN DEL CLIENTE', rightColumn, y);
+			y += 20;
+			doc.setFont(undefined, 'normal');
+			
+			const clientInfo = [
+				`Nombre: ${client.name}`,
+				`Teléfono: ${client.phone||'No especificado'}`,
+				`Email: ${client.email||'No especificado'}`,
+				`Cédula: ${client.cedula||'No especificado'}`
+			];
+			
+			clientInfo.forEach(line => {
+				doc.text(line, rightColumn, y);
+				y += 15;
+			});
+			
+			// Información del equipo (ancho completo)
+			y = Math.max(startY + (orderInfo.length * 15) + 40, startY + (clientInfo.length * 15) + 40);
+			
+			doc.setFont(undefined, 'bold');
+			doc.text('INFORMACIÓN DEL EQUIPO', leftColumn, y);
+			y += 20;
+			doc.setFont(undefined, 'normal');
+			
+			const equipInfo = [
+				`Marca: ${order.brand||'No especificado'}`,
+				`Modelo: ${order.model||'No especificado'}`,
+				`Serie: ${order.serial||'No especificado'}`,
+				`Accesorios: ${order.accessories||'Ninguno'}`
+			];
+			
+			equipInfo.forEach(line => {
+				doc.text(line, leftColumn, y);
+				y += 15;
+			});
+			
+			// Falla reportada
+			y += 10;
+			doc.setFont(undefined, 'bold');
+			doc.text('FALLA REPORTADA:', leftColumn, y);
+			y += 15;
+			doc.setFont(undefined, 'normal');
+			
+			const failureText = order.failure || 'No especificada';
+			const failureLines = wrapText(failureText, 80);
+			if(Array.isArray(failureLines)){
+				failureLines.forEach(line => {
+					doc.text(line, leftColumn, y);
+					y += 15;
+				});
+			} else {
+				doc.text(failureLines, leftColumn, y);
+				y += 15;
+			}
+			
+			// Notas (si existen)
+			if(order.notes){
+				y += 10;
+				doc.setFont(undefined, 'bold');
+				doc.text('NOTAS:', leftColumn, y);
+				y += 15;
+				doc.setFont(undefined, 'normal');
+				
+				const notesLines = wrapText(order.notes, 80);
+				if(Array.isArray(notesLines)){
+					notesLines.forEach(line => {
+						doc.text(line, leftColumn, y);
+						y += 15;
+					});
+				} else {
+					doc.text(notesLines, leftColumn, y);
+					y += 15;
+				}
+			}
+			
+			// Sección QR centrada en la parte inferior
+			y += 30;
+			const qrSize = 80;
+			
+			// Verificar si hay espacio, sino crear nueva página
+			if(y + qrSize + 60 > pageHeight - margin){
+				doc.addPage();
+				y = margin + 40;
+			}
+			
+			// Texto antes del QR (centrado)
+			doc.setFont(undefined, 'bold');
+			doc.setFontSize(12);
+			const qrText = 'Escanea el código QR para ver el estado de tu orden:';
+			const qrTextWidth = doc.getTextWidth(qrText);
+			doc.text(qrText, centerX - qrTextWidth/2, y);
+			y += 20;
+			
+			// QR centrado
+			const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(publicLink)}`;
+			
+			try {
+				const img = await loadImageFromUrl(qrUrl);
+				doc.addImage(img, 'PNG', centerX - qrSize/2, y, qrSize, qrSize);
+				y += qrSize + 15;
+			} catch(err) {
+				console.error('Error generando QR:', err);
+				doc.setFontSize(9);
+				const errorText = 'No se pudo generar el código QR.';
+				const errorTextWidth = doc.getTextWidth(errorText);
+				doc.text(errorText, centerX - errorTextWidth/2, y + 20);
+				y += 40;
+			}
+			
+			// URL debajo del QR (centrada y dividida en líneas)
+			doc.setFontSize(8);
+			doc.setFont(undefined, 'normal');
+			const visitText = 'O visita:';
+			const visitTextWidth = doc.getTextWidth(visitText);
+			doc.text(visitText, centerX - visitTextWidth/2, y);
+			y += 12;
+			
+			doc.setFontSize(7);
+			const urlLines = wrapText(publicLink, 60);
+			if(Array.isArray(urlLines)){
+				urlLines.forEach(line => {
+					const lineWidth = doc.getTextWidth(line);
+					doc.text(line, centerX - lineWidth/2, y);
+					y += 10;
+				});
+			} else {
+				const lineWidth = doc.getTextWidth(urlLines);
+				doc.text(urlLines, centerX - lineWidth/2, y);
+			}
+			
+			// Footer
+			y = pageHeight - margin;
+			doc.setFontSize(8);
+			doc.setFont(undefined, 'italic');
+			const footerText = 'Mipc Computadores - Servicio Técnico Especializado';
+			const footerWidth = doc.getTextWidth(footerText);
+			doc.text(footerText, centerX - footerWidth/2, y);
 
 			doc.save(`orden_${order.id}.pdf`);
 
 			function wrapText(text, maxChars){
 				if(!text) return '';
 				if(text.length <= maxChars) return text;
-				const parts = [];
-				let start = 0;
-				while(start < text.length){
-					parts.push(text.slice(start, start+maxChars));
-					start += maxChars;
-				}
-				return parts;
+				const words = text.split(' ');
+				const lines = [];
+				let currentLine = '';
+				
+				words.forEach(word => {
+					if((currentLine + word).length <= maxChars){
+						currentLine += (currentLine ? ' ' : '') + word;
+					} else {
+						if(currentLine) lines.push(currentLine);
+						currentLine = word;
+					}
+				});
+				
+				if(currentLine) lines.push(currentLine);
+				return lines;
 			}
+		}
+
+		// Función helper para cargar imagen desde URL
+		function loadImageFromUrl(url){
+			return new Promise((resolve, reject) => {
+				const img = new Image();
+				img.crossOrigin = 'Anonymous';
+				img.onload = () => {
+					const canvas = document.createElement('canvas');
+					canvas.width = img.width;
+					canvas.height = img.height;
+					const ctx = canvas.getContext('2d');
+					ctx.drawImage(img, 0, 0);
+					resolve(canvas.toDataURL('image/png'));
+				};
+				img.onerror = reject;
+				img.src = url;
+			});
 		}
 
 		async function openOrderModal(id){
@@ -758,6 +961,7 @@
 			} else {
 				const item = {
 					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+					accessToken: generateAccessToken(),
 					clientId: f.clientId.value,
 					brand: f.brand.value,
 					serial: f.serial.value,
@@ -985,6 +1189,8 @@
 			let y = 40;
 			const lineHeight = 14;
 			const pageHeight = doc.internal.pageSize.height;
+			const pageWidth = doc.internal.pageSize.width;
+			
 			doc.setFontSize(14);
 			doc.text('Órdenes - Mipc Computadores', margin, y);
 			y += 20;
@@ -1006,7 +1212,7 @@
 
 			printRow(cols);
 			doc.setLineWidth(0.5);
-			doc.line(margin, y-8, pageHeight - margin, y-8);
+			doc.line(margin, y-8, pageWidth - margin, y-8);
 
 			orders.forEach((o, idx)=>{
 				const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
@@ -1082,37 +1288,28 @@
 			const serial = order.serial || '';
 			const technician = order.technician || '';
 			const status = order.status || 'ingresado';
-			const detailLink = `https://tuulapp.com/1/?i=${encodeURIComponent(order.id)}`;
+			const publicLink = getPublicOrderLink(order);
 
 			let msg = '';
 			switch(status){
 				case 'en_reparacion':
-					msg = `Hola ${name}, te informamos que tu equipo (${brand} ${model}, S/N: ${serial}) está en reparación. Nuestro técnico ${technician || 'asignado'} está trabajando en la evaluación y reparación. Te avisaremos cuando haya novedades.`;
+					msg = `Hola ${name}, te informamos que tu equipo (${brand} ${model}, S/N: ${serial}) está en reparación. Nuestro técnico ${technician || 'asignado'} está trabajando en la evaluación y reparación. Te avisaremos cuando haya novedades.\n\nPuedes ver el estado de tu orden aquí: ${publicLink}`;
 					break;
 				case 'espera_entrega':
-					msg = `Hola ${name}, tu equipo (${brand} ${model}, S/N: ${serial}) ya está listo y en espera de entrega en nuestro taller. Por favor pasa a recogerlo. Si necesitas coordinar la entrega, responde este mensaje.`;
+					msg = `Hola ${name}, tu equipo (${brand} ${model}, S/N: ${serial}) ya está listo y en espera de entrega en nuestro taller. Por favor pasa a recogerlo. Si necesitas coordinar la entrega, responde este mensaje.\n\nVer detalles: ${publicLink}`;
 					break;
 				case 'entregado':
-					msg = `Hola ${name}, confirmamos que tu equipo (${brand} ${model}, S/N: ${serial}) ha sido entregado. Muchas gracias por confiar en Mipc Computadores. Si tienes alguna inquietud, contáctanos.`;
+					msg = `Hola ${name}, confirmamos que tu equipo (${brand} ${model}, S/N: ${serial}) ha sido entregado. Muchas gracias por confiar en Mipc Computadores. Si tienes alguna inquietud, contáctanos.\n\nVer detalles: ${publicLink}`;
 					break;
 				case 'ingresado':
 				default:
-					msg = `Hola ${name}, tu equipo (${brand} ${model}, S/N: ${serial}) ha sido ingresado a nuestro taller. Puedes ver los detalles y seguimiento aquí: ${detailLink}. Pronto te informaremos sobre el estado.`;
+					msg = `Hola ${name}, tu equipo (${brand} ${model}, S/N: ${serial}) ha sido ingresado a nuestro taller. Puedes ver los detalles y seguimiento aquí: ${publicLink}. Pronto te informaremos sobre el estado.`;
 					break;
 			}
 
-			msg = `${msg} — Mipc Computadores`;
+			msg = `${msg}\n\n— Mipc Computadores`;
 
 			return `https://api.whatsapp.com/send?phone=${normalized}&text=${encodeURIComponent(msg)}&type=phone_number&app_absent=0`;
-		}
-
-		// Abrir WhatsApp para la orden (usa siempre el teléfono guardado en el cliente y prefijo 57)
-		async function openWhatsApp(id){
-			const order = (await loadOrders()).find(o=>o.id==id);
-			if(!order) return alert('Orden no encontrada');
-			const link = await generateWhatsAppLink(order);
-			if(!link) return;
-			window.open(link, '_blank');
 		}
 
 		// Normaliza teléfono
@@ -1304,6 +1501,57 @@
 			await renderOrders();
 			await renderFinance();
 			await computeMetrics();
+		}
+
+		// nueva función: generar token de acceso aleatorio
+		function generateAccessToken(){
+			const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			let token = '';
+			for(let i = 0; i < 16; i++){
+				token += chars.charAt(Math.floor(Math.random() * chars.length));
+			}
+			return token;
+		}
+
+		// nueva función: obtener enlace público de la orden
+		function getPublicOrderLink(order){
+			if(!order.accessToken){
+				// si la orden no tiene token, generarlo (para órdenes antiguas)
+				order.accessToken = generateAccessToken();
+			}
+			const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+			return `${baseUrl}orden.html?token=${order.accessToken}`;
+		}
+
+		// nueva función: copiar enlace público al portapapeles
+		async function copyPublicLink(id){
+			const orders = await loadOrders();
+			const order = orders.find(o=>o.id==id);
+			if(!order) return alert('Orden no encontrada');
+			
+			// generar token si no existe
+			if(!order.accessToken){
+				order.accessToken = generateAccessToken();
+				await saveOrders(orders);
+			}
+			
+			const link = getPublicOrderLink(order);
+			
+			try {
+				await navigator.clipboard.writeText(link);
+				alert('Enlace copiado al portapapeles:\n' + link);
+			} catch(err){
+				// fallback para navegadores que no soportan clipboard API
+				const textarea = document.createElement('textarea');
+				textarea.value = link;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(textarea);
+				alert('Enlace copiado al portapapeles:\n' + link);
+			}
 		}
 	</script>
 </body>

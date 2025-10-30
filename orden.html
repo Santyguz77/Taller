@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Estado de Orden - Mipc Computadores</title>
+	<style>
+		:root{
+			--bg:#0f1720; --panel:#0f2430; --accent:#c7ff00; --muted:#9aa5b1; --card:#0b1720;
+		}
+		body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#e6eef3;padding:20px}
+		.container{max-width:800px;margin:0 auto;background:linear-gradient(180deg, #071722, #06121a);padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+		.brand{font-weight:700;color:var(--accent);margin-bottom:20px;font-size:24px;text-align:center}
+		.order-info{margin-bottom:20px}
+		.info-row{display:flex;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+		.info-label{font-weight:600;color:var(--muted);min-width:140px}
+		.info-value{color:#dfeef2;flex:1}
+		.status-badge{display:inline-block;padding:6px 12px;border-radius:16px;font-size:13px;font-weight:600}
+		.status-ingresado{background:#c7ff00;color:#06121a}
+		.status-en_reparacion{background:#3bb4ff;color:#fff}
+		.status-espera_entrega{background:#ffcc33;color:#07121a}
+		.status-entregado{background:#7af0a5;color:#07121a}
+		.payment-badge{display:inline-block;padding:6px 12px;border-radius:16px;font-size:13px;font-weight:600}
+		.payment-paid{background:#7af0a5;color:#07121a}
+		.payment-unpaid{background:#ff5b6b;color:#fff}
+		.images-gallery{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+		.image-item{width:150px;height:150px;border-radius:8px;overflow:hidden;border:2px solid rgba(255,255,255,.1);cursor:pointer}
+		.image-item img{width:100%;height:100%;object-fit:cover}
+		.error{color:#ff5b6b;text-align:center;padding:40px;font-size:18px}
+		.loading{text-align:center;padding:40px;color:var(--muted)}
+		.footer{margin-top:30px;text-align:center;color:var(--muted);font-size:13px}
+		h2{color:var(--accent);margin-bottom:20px}
+		
+		/* Modal para imagen ampliada */
+		.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,8,.9);z-index:1000}
+		.modal.show{display:flex}
+		.modal img{max-width:90%;max-height:90%;border-radius:8px}
+		.modal-close{position:absolute;top:20px;right:20px;background:#ff5b6b;color:#fff;border:0;padding:10px 20px;border-radius:6px;cursor:pointer;font-size:16px}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="brand">Mipc Computadores</div>
+		<div id="content" class="loading">Cargando información...</div>
+	</div>
+
+	<!-- Modal para ver imagen ampliada -->
+	<div class="modal" id="image-modal">
+		<button class="modal-close" onclick="closeImageModal()">✕ Cerrar</button>
+		<img id="modal-image" src="" alt="Imagen ampliada">
+	</div>
+
+	<script>
+		const API_URL = "https://uncertainty-air-portion-media.trycloudflare.com/api";
+
+		const ORDER_STATUSES = {
+			ingresado: 'Ingresado',
+			en_reparacion: 'En reparación',
+			espera_entrega: 'En espera de entrega',
+			entregado: 'Entregado'
+		};
+
+		async function loadOrderByToken(token){
+			try {
+				const res = await fetch(`${API_URL}/orders`);
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				const orders = await res.json();
+				return orders.find(o => o.accessToken === token);
+			} catch (err) {
+				console.error("Error al cargar orden:", err);
+				return null;
+			}
+		}
+
+		async function loadClient(clientId){
+			try {
+				const res = await fetch(`${API_URL}/clients`);
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				const clients = await res.json();
+				return clients.find(c => c.id === clientId);
+			} catch (err) {
+				console.error("Error al cargar cliente:", err);
+				return null;
+			}
+		}
+
+		function formatCurrency(v){
+			try {
+				return new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:2 }).format(v);
+			} catch(e){
+				return (v||0).toFixed(2);
+			}
+		}
+
+		function escapeHtml(s){ 
+			if(!s) return ''; 
+			return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); 
+		}
+
+		async function renderOrder(){
+			const params = new URLSearchParams(window.location.search);
+			const token = params.get('token');
+			const content = document.getElementById('content');
+
+			if(!token){
+				content.innerHTML = '<div class="error">⚠️ Enlace inválido. Por favor verifica el enlace recibido.</div>';
+				return;
+			}
+
+			const order = await loadOrderByToken(token);
+
+			if(!order){
+				content.innerHTML = '<div class="error">⚠️ Orden no encontrada. El enlace puede estar vencido o ser incorrecto.</div>';
+				return;
+			}
+
+			const client = await loadClient(order.clientId) || {name:'--', phone:'', email:''};
+			const statusKey = order.status || 'ingresado';
+			const statusLabel = ORDER_STATUSES[statusKey] || statusKey;
+			const statusClass = `status-${statusKey}`;
+			const isPaid = order.paid === true;
+			const priceDisplay = order.price ? formatCurrency(Number(order.price)) : 'No especificado';
+
+			let imagesHtml = '';
+			if(order.images && order.images.length > 0){
+				imagesHtml = '<div class="images-gallery">';
+				order.images.forEach((img, idx) => {
+					imagesHtml += `<div class="image-item" onclick="openImageModal('${escapeHtml(img.data)}')"><img src="${escapeHtml(img.data)}" alt="Imagen ${idx+1}"></div>`;
+				});
+				imagesHtml += '</div>';
+			} else {
+				imagesHtml = '<div style="color:var(--muted);font-size:13px">No hay imágenes adjuntas</div>';
+			}
+
+			content.innerHTML = `
+				<h2>Estado de tu Orden</h2>
+				<div class="order-info">
+					<div class="info-row">
+						<div class="info-label">ID de Orden:</div>
+						<div class="info-value"><strong>${escapeHtml(order.id)}</strong></div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Cliente:</div>
+						<div class="info-value">${escapeHtml(client.name)}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Teléfono:</div>
+						<div class="info-value">${escapeHtml(client.phone||'--')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Estado:</div>
+						<div class="info-value"><span class="status-badge ${statusClass}">${statusLabel}</span></div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Estado de Pago:</div>
+						<div class="info-value">${isPaid ? '<span class="payment-badge payment-paid">Pagado</span>' : '<span class="payment-badge payment-unpaid">Pendiente de pago</span>'}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Fecha de Ingreso:</div>
+						<div class="info-value">${new Date(order.date).toLocaleString()}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Marca:</div>
+						<div class="info-value">${escapeHtml(order.brand||'--')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Modelo:</div>
+						<div class="info-value">${escapeHtml(order.model||'--')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Serie:</div>
+						<div class="info-value">${escapeHtml(order.serial||'--')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Accesorios:</div>
+						<div class="info-value">${escapeHtml(order.accessories||'--')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Falla Reportada:</div>
+						<div class="info-value">${escapeHtml(order.failure||'--')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Técnico Asignado:</div>
+						<div class="info-value">${escapeHtml(order.technician||'Por asignar')}</div>
+					</div>
+					<div class="info-row">
+						<div class="info-label">Precio:</div>
+						<div class="info-value"><strong>${priceDisplay}</strong></div>
+					</div>
+				</div>
+
+				<h2>Imágenes del Equipo</h2>
+				${imagesHtml}
+
+				<div class="footer">
+					<p>Si tienes alguna pregunta, contáctanos:</p>
+					<p><strong>Mipc Computadores</strong></p>
+					<p>Este enlace es privado y único para tu orden.</p>
+				</div>
+			`;
+		}
+
+		function openImageModal(src){
+			const modal = document.getElementById('image-modal');
+			const img = document.getElementById('modal-image');
+			img.src = src;
+			modal.classList.add('show');
+		}
+
+		function closeImageModal(){
+			const modal = document.getElementById('image-modal');
+			modal.classList.remove('show');
+		}
+
+		// Cerrar modal al hacer clic fuera de la imagen
+		document.getElementById('image-modal').addEventListener('click', (e) => {
+			if(e.target.id === 'image-modal') closeImageModal();
+		});
+
+		document.addEventListener('DOMContentLoaded', renderOrder);
+	</script>
+</body>
+</html>
