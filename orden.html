@@ -62,10 +62,15 @@
 
 		async function loadOrderByToken(token){
 			try {
+				console.log('Buscando orden con token:', token);
 				const res = await fetch(`${API_URL}/orders`);
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				const orders = await res.json();
-				return orders.find(o => o.accessToken === token);
+				console.log('Órdenes cargadas:', orders.length);
+				console.log('Tokens disponibles:', orders.map(o => o.accessToken));
+				const order = orders.find(o => o.accessToken === token);
+				console.log('Orden encontrada:', order);
+				return order;
 			} catch (err) {
 				console.error("Error al cargar orden:", err);
 				return null;
@@ -102,15 +107,27 @@
 			const token = params.get('token');
 			const content = document.getElementById('content');
 
+			console.log('Token desde URL:', token);
+
 			if(!token){
 				content.innerHTML = '<div class="error">⚠️ Enlace inválido. Por favor verifica el enlace recibido.</div>';
 				return;
 			}
 
+			content.innerHTML = '<div class="loading">Buscando orden...</div>';
+
 			const order = await loadOrderByToken(token);
 
 			if(!order){
-				content.innerHTML = '<div class="error">⚠️ Orden no encontrada. El enlace puede estar vencido o ser incorrecto.</div>';
+				content.innerHTML = `
+					<div class="error">
+						⚠️ Orden no encontrada. 
+						<br><br>
+						<small>Token buscado: ${escapeHtml(token)}</small>
+						<br>
+						<small>Verifica que el enlace sea correcto o contacta a Mipc Computadores.</small>
+					</div>
+				`;
 				return;
 			}
 
@@ -221,4 +238,3 @@
 	</script>
 </body>
 </html>
-

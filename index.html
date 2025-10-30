@@ -59,7 +59,104 @@
 		/* modal historial */
 		.history-list{max-height:320px;overflow:auto;padding:8px;border-radius:6px;background:#031419;color:#dff0ea}
 
-		@media(max-width:800px){.sidebar{display:none}.modal .panel{width:95%}}
+		/* NUEVO: contenedor para scroll horizontal de tablas */
+		.table-scroll {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			border-radius: 8px;
+		}
+		/* NUEVO: ancho mínimo para que la tabla pueda desplazarse en móvil */
+		table {
+			/* ...existing code... */
+			min-width: 900px; /* asegura scroll horizontal en pantallas angostas */
+		}
+
+		/* NUEVO: filtros en línea que se adaptan en móvil */
+		#orders-section .small.filters {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			align-items: center;
+		}
+
+		/* NUEVO: celda de acciones adaptable */
+		td.actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+		td.actions button,
+		td.actions select {
+			margin-right: 0; /* anula margen previo para usar gap */
+			margin-bottom: 0;
+		}
+
+		/* NUEVO: mejoras modales en pantallas pequeñas/medianas */
+		.modal .panel{
+			/* ...existing code... */
+			max-height: 90vh;
+			overflow: auto;
+		}
+
+		/* NUEVO: mejoras generales responsivas */
+		.header{
+			/* ...existing code... */
+			flex-wrap: wrap;
+			align-items: flex-start;
+			gap: 10px;
+		}
+		.controls{
+			/* ...existing code... */
+			flex-wrap: wrap;
+		}
+
+		/* NUEVO: media queries suaves */
+		@media (max-width: 800px){
+			/* Sidebar ya se oculta con tu regla existente */
+
+			/* Cabecera y botones */
+			.header{flex-direction: column;}
+			button.btn{min-height: 40px}
+
+			/* Formularios */
+			.form-row{flex-direction: column}
+			.form-row input, .form-row textarea, .form-row select{width:100%}
+
+			/* Tabla más compacta */
+			table{font-size: 12px}
+			th,td{padding:6px 8px}
+
+			/* Imágenes un poco más pequeñas */
+			.image-preview{width:80px;height:80px}
+		}
+
+		@media (max-width: 480px){
+			/* Tabla aún más compacta */
+			table{font-size: 11px; min-width: 700px}
+			th,td{padding:6px}
+
+			/* Botones cómodos al tacto */
+			button.btn{min-height:44px;font-size:14px}
+
+			/* Vista previa imágenes en muy pequeño */
+			.image-preview{width:64px;height:64px}
+		}
+
+		/* NUEVO: estilos mínimos para inventario */
+		#inventory-section .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+		#inventory-section .controls input { padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2 }
+		.badge-cat{display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.08);font-size:12px;color:#cfe6f3}
+
+		/* NUEVO: estilos para facturas */
+		#invoices-section .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+		.invoice-items-list { margin-top:12px; padding:10px; background:#031419; border-radius:6px }
+		.invoice-item-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; padding:8px; background:#051820; border-radius:4px }
+		.invoice-item-row input, .invoice-item-row select { flex:1; padding:6px; border-radius:4px; background:#062028; border:1px solid rgba(255,255,255,.04); color:#dfeef2 }
+		.invoice-item-row .small { flex:1; color:var(--muted) }
+		.invoice-total { text-align:right; font-size:16px; font-weight:700; color:var(--accent); margin-top:12px; padding:10px; background:#051820; border-radius:6px }
+		.badge-status-paid { background:#7af0a5; color:#07121a; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:600 }
+		.badge-status-unpaid { background:#ff5b6b; color:#fff; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:600 }
+		.badge-status-partial { background:#ffcc33; color:#07121a; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:600 }
 	</style>
 </head>
 <body>
@@ -69,7 +166,9 @@
 			<ul class="menu">
 				<li class="active" data-view="orders">Órdenes</li>
 				<li data-view="clients">Clientes</li>
-				<li data-view="finance">Finanzas</li> <!-- nueva pestaña -->
+				<li data-view="invoices">Facturas</li> <!-- NUEVO -->
+				<li data-view="finance">Finanzas</li>
+				<li data-view="inventory">Inventario</li>
 				<li data-view="settings">Configuración</li>
 			</ul>
 			<div style="margin-top:20px" class="small">Puedes exportar/importar desde Configuración.</div>
@@ -81,11 +180,12 @@
 				<div class="controls">
 					<button class="btn" id="btn-add-order">+ Nueva orden</button>
 					<button class="btn" id="btn-add-client" style="display:none;background:#3bb4ff;color:#04121a">+ Nuevo cliente</button>
+					<span id="conn-status" class="small" style="margin-left:8px">Conectando…</span>
 				</div>
 			</div>
 
 			<section id="orders-section" class="card">
-				<div class="small">
+				<div class="small filters">
 					Filtrar:
 					<input id="filter-input" placeholder="buscar por cliente, serie o modelo" style="margin-left:8px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
 					<!-- nuevo: filtro por estado -->
@@ -104,27 +204,33 @@
 					</select>
 				</div>
 
-				<table id="orders-table" aria-label="Órdenes">
-					<thead>
-						<tr>
-							<th>ID</th><th>Cliente</th><th>Marca</th><th>Modelo</th><th>Serie</th><th>Accesorios</th><th>Falla</th>
-							<th>Estado</th><th>Precio</th><th>Pago</th><th>Imágenes</th><th>Técnico</th><th>Fecha</th><th>Acciones</th>
-						</tr>
-					</thead>
-					<tbody>
-						<!-- filas generadas por JS -->
-					</tbody>
-				</table>
+				<!-- NUEVO: envoltorio con scroll horizontal -->
+				<div class="table-scroll">
+					<table id="orders-table" aria-label="Órdenes">
+						<thead>
+							<tr>
+								<th>ID</th><th>Cliente</th><th>Marca</th><th>Modelo</th><th>Serie</th><th>Accesorios</th><th>Falla</th>
+								<th>Estado</th><th>Precio</th><th>Pago</th><th>Imágenes</th><th>Técnico</th><th>Fecha</th><th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody>
+							<!-- filas generadas por JS -->
+						</tbody>
+					</table>
+				</div>
 				<div class="footer-note" id="orders-count"></div>
 			</section>
 
 			<section id="clients-section" class="card" style="display:none;margin-top:12px">
 				<h3>Clientes</h3>
 				<button class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button>
-				<table id="clients-table">
-					<thead><tr><th>ID</th><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
-					<tbody></tbody>
-				</table>
+				<!-- NUEVO: envoltorio con scroll horizontal -->
+				<div class="table-scroll">
+					<table id="clients-table">
+						<thead><tr><th>ID</th><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
 			</section>
 
 			<!-- Nueva sección: Finanzas -->
@@ -134,7 +240,8 @@
 				<div id="finance-metrics" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
 					<!-- contenido poblado por JS -->
 				</div>
-				<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+				<!-- pequeño ajuste: permitir wrap en controles -->
+				<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
 					<button class="btn" id="btn-new-transaction">+ Nueva transacción</button>
 					<div id="finance-summary" class="small" style="margin-left:12px">Cargando...</div>
 					<!-- filtros: tipo y categoría -->
@@ -169,10 +276,70 @@
 					</div>
 				</form>
 
-				<table id="transactions-table">
-					<thead><tr><th>ID</th><th>Tipo</th><th>Monto</th><th>Categoría</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
-					<tbody></tbody>
-				</table>
+				<!-- NUEVO: envoltorio con scroll horizontal -->
+				<div class="table-scroll">
+					<table id="transactions-table">
+						<thead><tr><th>ID</th><th>Tipo</th><th>Monto</th><th>Categoría</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
+			</section>
+
+			<!-- NUEVO: Sección Inventario -->
+			<section id="inventory-section" class="card" style="display:none;margin-top:12px">
+				<h3>Inventario</h3>
+				<div class="controls">
+					<button class="btn" id="btn-new-item">+ Nuevo ítem</button>
+					<input id="inv-filter" placeholder="Buscar por nombre o categoría">
+					<div class="small" id="inventory-summary">Cargando...</div>
+				</div>
+
+				<div class="table-scroll">
+					<table id="inventory-table">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Nombre</th>
+								<th>Categoría</th>
+								<th>Stock</th>
+								<th>Costo u.</th>
+								<th>Precio u.</th>
+								<th>Proveedor</th>
+								<th>Actualizado</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+			</section>
+
+			<!-- NUEVO: Sección Facturas -->
+			<section id="invoices-section" class="card" style="display:none;margin-top:12px">
+				<h3>Facturas</h3>
+				<div class="controls">
+					<button class="btn" id="btn-new-invoice">+ Nueva factura</button>
+					<input id="invoice-filter" placeholder="Buscar por cliente o número">
+					<div class="small" id="invoices-summary">Cargando...</div>
+				</div>
+
+				<div class="table-scroll">
+					<table id="invoices-table">
+						<thead>
+							<tr>
+								<th>Número</th>
+								<th>Cliente</th>
+								<th>Fecha</th>
+								<th>Subtotal</th>
+								<th>IVA</th>
+								<th>Total</th>
+								<th>Estado</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
 			</section>
 
 			<section id="settings-section" class="card" style="display:none;margin-top:12px">
@@ -288,35 +455,230 @@
 		</div>
 	</div>
 
+	<!-- NUEVO: Modal ítem de inventario -->
+	<div class="modal" id="modal-inventory-item">
+		<div class="panel">
+			<h3 id="modal-inventory-title">Nuevo ítem</h3>
+			<form id="form-inventory-item">
+				<div class="form-row">
+					<input name="name" placeholder="Nombre" required>
+					<input name="category" placeholder="Categoría">
+				</div>
+				<div class="form-row">
+					<input name="stock" type="number" step="1" min="0" placeholder="Stock inicial" value="0">
+					<input name="unitCost" type="number" step="0.01" placeholder="Costo unitario">
+					<input name="unitPrice" type="number" step="0.01" placeholder="Precio unitario">
+				</div>
+				<div class="form-row">
+					<input name="supplier" placeholder="Proveedor">
+					<input name="notes" placeholder="Notas" style="flex:2">
+				</div>
+				<div style="display:flex;gap:8px;justify-content:flex-end">
+					<button type="button" class="btn" id="btn-close-inventory-item" style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn">Guardar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- NUEVO: Modal movimiento (entrada/salida) -->
+	<div class="modal" id="modal-movement">
+		<div class="panel">
+			<h3 id="modal-movement-title">Registrar movimiento</h3>
+			<form id="form-movement">
+				<input type="hidden" name="itemId">
+				<input type="hidden" name="type"> <!-- in | out -->
+				<div class="form-row">
+					<input name="qty" type="number" step="1" min="1" placeholder="Cantidad" required>
+					<input name="unitValue" type="number" step="0.01" placeholder="Valor unitario">
+				</div>
+				<div class="form-row">
+					<input name="notes" placeholder="Notas">
+					<input name="date" type="date">
+				</div>
+				<div style="display:flex;gap:8px;justify-content:flex-end">
+					<button type="button" class="btn" id="btn-close-movement" style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn">Registrar</button>
+				</div>
+				<div class="small" id="movement-hint" style="margin-top:6px;color:#9aa5b1"></div>
+			</form>
+		</div>
+	</div>
+
+	<!-- NUEVO: Modal historial de movimientos -->
+	<div class="modal" id="modal-movements-history">
+		<div class="panel">
+			<h3 id="modal-movements-title">Historial de movimientos</h3>
+			<div class="history-list" id="movements-history"></div>
+			<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+				<button type="button" class="btn" id="btn-close-movements" style="background:#64707a">Cerrar</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- NUEVO: Modal crear/editar factura -->
+	<div class="modal" id="modal-invoice">
+		<div class="panel" style="max-width:800px;width:90%">
+			<h3 id="modal-invoice-title">Nueva factura</h3>
+			<form id="form-invoice">
+				<div class="form-row">
+					<select name="clientId" required>
+						<option value="">-- Seleccionar cliente --</option>
+					</select>
+					<input name="invoiceNumber" placeholder="Número de factura (auto)" readonly style="background:#031419">
+				</div>
+				<div class="form-row">
+					<input name="date" type="date" required>
+					<select name="paymentStatus">
+						<option value="unpaid">No pagada</option>
+						<option value="partial">Pago parcial</option>
+						<option value="paid">Pagada</option>
+					</select>
+				</div>
+				<div class="form-row">
+					<textarea name="notes" placeholder="Notas (opcional)" rows="2"></textarea>
+				</div>
+
+				<!-- Ítems de la factura -->
+				<div style="margin-top:12px">
+					<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+						<strong>Ítems de la factura</strong>
+						<button type="button" class="btn" id="btn-add-invoice-item" style="background:#3bb4ff;color:#04121a;font-size:12px;padding:6px 10px">+ Agregar ítem</button>
+					</div>
+					<div class="invoice-items-list" id="invoice-items-list">
+						<!-- ítems dinámicos -->
+					</div>
+				</div>
+
+				<!-- Totales -->
+				<div style="margin-top:12px;padding:10px;background:#051820;border-radius:6px">
+					<div style="display:flex;justify-content:space-between;margin-bottom:4px">
+						<span>Subtotal:</span>
+						<span id="invoice-subtotal">$0.00</span>
+					</div>
+					<div style="display:flex;justify-content:space-between;margin-bottom:4px">
+						<span>IVA (19%):</span>
+						<span id="invoice-tax">$0.00</span>
+					</div>
+					<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:var(--accent);padding-top:8px;border-top:1px solid rgba(255,255,255,.1)">
+						<span>Total:</span>
+						<span id="invoice-total">$0.00</span>
+					</div>
+				</div>
+
+				<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+					<button type="button" class="btn" id="btn-close-invoice" style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn">Guardar factura</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
 	<!-- incluir jsPDF desde CDN -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 	<script>
-		// NUEVO: URL del API
-		const API_URL = "https://rides-prefer-seal-becomes.trycloudflare.com/api";
+		// NUEVO: configuración de API con fallback y caché local
+		const REMOTE_API = "https://rides-prefer-seal-becomes.trycloudflare.com/api"; // puede ser inestable
+		let lastApiBase = localStorage.getItem('API_URL_LAST') || null;
+		let API_TIMEOUT_MS = Number(localStorage.getItem('API_TIMEOUT_MS')||'1200') || 1200; // tiempo máximo por intento de API
+
+		function getApiCandidates(){
+			const override = localStorage.getItem('API_URL_OVERRIDE');
+			const sameOrigin = (location.origin && location.origin.startsWith('http')) ? (location.origin + '/api') : null;
+			const local = 'http://localhost:3000/api';
+			const list = [];
+			// priorizar la última API que funcionó
+			if(lastApiBase) list.push(lastApiBase);
+			if(override) list.push(override);
+			if(sameOrigin && !list.includes(sameOrigin)) list.push(sameOrigin);
+			if(!list.includes(local)) list.push(local);
+			if(!list.includes(REMOTE_API)) list.push(REMOTE_API);
+			return list;
+		}
+
+		function setOnline(ok, base){
+			const el = document.getElementById('conn-status');
+			if(!el) return;
+			if(ok){
+				lastApiBase = base || lastApiBase;
+				if(lastApiBase){ try{ localStorage.setItem('API_URL_LAST', lastApiBase); }catch{} }
+				el.textContent = 'Conectado';
+				el.style.color = '#7af0a5';
+				if(base) el.title = base;
+			} else {
+				el.textContent = 'Sin conexión (datos locales)';
+				el.style.color = '#ffcc33';
+			}
+		}
+
+		// helper: fetch con timeout
+		async function fetchWithTimeout(url, options={}, timeoutMs=API_TIMEOUT_MS){
+			const controller = new AbortController();
+			const id = setTimeout(()=> controller.abort(), timeoutMs);
+			try{
+				const res = await fetch(url, { ...options, signal: controller.signal });
+				return res;
+			} finally {
+				clearTimeout(id);
+			}
+		}
 
 		// funciones reutilizables para comunicarse con el backend
 		async function loadTable(table) {
-			try {
-				const res = await fetch(`${API_URL}/${table}`);
-				if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-				return await res.json();
-			} catch (err) {
-				console.error("Error al cargar datos:", err);
+			const cacheKey = `cache:${table}`;
+			const bases = getApiCandidates();
+			const attempts = bases.map(base => (
+				fetchWithTimeout(`${base}/${table}`, { method:'GET' })
+					.then(async res => {
+						if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+						const data = await res.json();
+						return { base, data };
+					})
+			));
+			try{
+				// tomar la primera respuesta exitosa
+				const { base, data } = await Promise.any(attempts);
+				try{ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); }catch{}
+				setOnline(true, base);
+				return Array.isArray(data) ? data : [];
+			}catch(err){
+				console.warn(`Todas las APIs fallaron en GET ${table}:`, err && err.message ? err.message : err);
+				// Fallback a caché
+				try{
+					const cached = localStorage.getItem(cacheKey);
+					if(cached){
+						const obj = JSON.parse(cached);
+						setOnline(false);
+						return Array.isArray(obj.data) ? obj.data : [];
+					}
+				}catch{}
+				setOnline(false);
 				return [];
 			}
 		}
 
 		async function saveTable(table, data) {
-			try {
-				await fetch(`${API_URL}/${table}`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(data)
-				});
-			} catch (err) {
-				console.error("Error al guardar datos:", err);
+			const cacheKey = `cache:${table}`;
+			const bases = getApiCandidates();
+			for(const base of bases){
+				try{
+					const res = await fetchWithTimeout(`${base}/${table}`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(data)
+					}, API_TIMEOUT_MS);
+					if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+					try{ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); }catch{}
+					setOnline(true, base);
+					return;
+				}catch(err){
+					console.warn(`Fallo guardando en ${base} (${table})`, err && err.message ? err.message : err);
+				}
 			}
+			// si todas fallan, guardar en caché para no perder datos y no bloquear
+			try{ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); }catch{}
+			setOnline(false);
 		}
 
 		// Storage helpers (ahora asíncronos y delegan a loadTable/saveTable)
@@ -328,9 +690,17 @@
 		async function saveEquipments(list){ await saveTable('equipments', list); }
 		async function loadTransactions(){ return await loadTable('transactions'); }
 		async function saveTransactions(list){ await saveTable('transactions', list); }
+		// NUEVO: helpers de inventario (API)
+		async function loadInventory(){ return await loadTable('inventory'); }
+		async function saveInventory(list){ await saveTable('inventory', list); }
+		async function loadInventoryMovements(){ return await loadTable('inventory_movements'); }
+		async function saveInventoryMovements(list){ await saveTable('inventory_movements', list); }
+		// NUEVO: helpers de facturas (API)
+		async function loadInvoices(){ return await loadTable('invoices'); }
+		async function saveInvoices(list){ await saveTable('invoices', list); }
 
 		// Categorías predefinidas para Finanzas
-		const FINANCE_CATEGORIES = ['Servicios','Repuestos','Ventas','Nomina','Otros'];
+		const FINANCE_CATEGORIES = ['Servicios','Repuestos','Ventas','Nomina','Otros', 'Inventario']; // NUEVO: 'Inventario'
 
 		// pobla los selects de categoría (#category-filter y #tx-category)
 		async function populateFinanceCategorySelects(){
@@ -374,6 +744,13 @@
 		// estado
 		let editingOrderId = null;
 		let editingClientId = null;
+		// NUEVO: estado inventario
+		let editingItemId = null;
+		let currentMovementItemId = null;
+		let currentMovementType = null; // 'in' | 'out'
+		// NUEVO: estado de facturas
+		let editingInvoiceId = null;
+		let invoiceItems = []; // ítems temporales de la factura actual
 
 		// init
 		document.addEventListener('DOMContentLoaded', async ()=> {
@@ -381,8 +758,10 @@
 			renderView('orders');
 			await renderOrders();
 			await renderClients();
-			await populateFinanceCategorySelects(); // rellenar selects de categoría
-			await renderFinance(); // inicializar finanzas (después de poblar categorías)
+			await populateFinanceCategorySelects();
+			await renderFinance();
+			await renderInventory();
+			await renderInvoices(); // NUEVO
 		});
 
 		function bindUI(){
@@ -403,9 +782,19 @@
 			$('#btn-close-order').addEventListener('click', ()=> closeModal('#modal-order'));
 			$('#btn-close-client').addEventListener('click', ()=> closeModal('#modal-client'));
 			$('#btn-close-equipment').addEventListener('click', ()=> closeModal('#modal-equipment'));
+			const btnCloseItem = document.getElementById('btn-close-inventory-item');
+			if(btnCloseItem) btnCloseItem.addEventListener('click', ()=> closeModal('#modal-inventory-item'));
+			const btnCloseMove = document.getElementById('btn-close-movement');
+			if(btnCloseMove) btnCloseMove.addEventListener('click', ()=> closeModal('#modal-movement'));
+			const btnCloseMovs = document.getElementById('btn-close-movements');
+			if(btnCloseMovs) btnCloseMovs.addEventListener('click', ()=> closeModal('#modal-movements-history'));
 
 			$('#form-order').addEventListener('submit', async (e)=> await saveOrderFromForm(e));
 			$('#form-client').addEventListener('submit', async (e)=> await saveClientFromForm(e));
+			const formItem = document.getElementById('form-inventory-item');
+			if(formItem) formItem.addEventListener('submit', async (e)=> await saveInventoryItemFromForm(e));
+			const formMove = document.getElementById('form-movement');
+			if(formMove) formMove.addEventListener('submit', async (e)=> await saveMovementFromForm(e));
 
 			// nuevo: manejo de imágenes
 			$('#order-images').addEventListener('change', handleImageUpload);
@@ -442,13 +831,38 @@
 			if(typeFilter) typeFilter.addEventListener('change', async ()=> await renderFinance());
 			const catFilter = $('#category-filter');
 			if(catFilter) catFilter.addEventListener('change', async ()=> await renderFinance());
+
+			// NUEVO: bindings inventario
+			const btnNewItem = document.getElementById('btn-new-item');
+			if(btnNewItem) btnNewItem.addEventListener('click', ()=> openInventoryItemModal());
+
+			const invFilter = document.getElementById('inv-filter');
+			if(invFilter) invFilter.addEventListener('input', async ()=> await renderInventory());
+
+			// NUEVO: bindings facturas
+			const btnNewInvoice = document.getElementById('btn-new-invoice');
+			if(btnNewInvoice) btnNewInvoice.addEventListener('click', ()=> openInvoiceModal());
+
+			const btnCloseInvoice = document.getElementById('btn-close-invoice');
+			if(btnCloseInvoice) btnCloseInvoice.addEventListener('click', ()=> closeModal('#modal-invoice'));
+
+			const formInvoice = document.getElementById('form-invoice');
+			if(formInvoice) formInvoice.addEventListener('submit', async (e)=> await saveInvoiceFromForm(e));
+
+			const btnAddInvoiceItem = document.getElementById('btn-add-invoice-item');
+			if(btnAddInvoiceItem) btnAddInvoiceItem.addEventListener('click', ()=> addInvoiceItemRow());
+
+			const invoiceFilter = document.getElementById('invoice-filter');
+			if(invoiceFilter) invoiceFilter.addEventListener('input', async ()=> await renderInvoices());
 		}
 
 		async function renderView(view){
-			$('#view-title').textContent = view === 'orders' ? 'Órdenes' : view === 'clients' ? 'Clientes' : view === 'finance' ? 'Finanzas' : 'Configuración';
+			$('#view-title').textContent = view === 'orders' ? 'Órdenes' : view === 'clients' ? 'Clientes' : view === 'invoices' ? 'Facturas' : view === 'finance' ? 'Finanzas' : view === 'inventory' ? 'Inventario' : 'Configuración';
 			$('#orders-section').style.display = view === 'orders' ? 'block' : 'none';
 			$('#clients-section').style.display = view === 'clients' ? 'block' : 'none';
+			$('#invoices-section').style.display = view === 'invoices' ? 'block' : 'none'; // NUEVO
 			$('#finance-section').style.display = view === 'finance' ? 'block' : 'none';
+			$('#inventory-section').style.display = view === 'inventory' ? 'block' : 'none';
 			$('#settings-section').style.display = view === 'settings' ? 'block' : 'none';
 			$('#btn-add-client').style.display = view === 'clients' ? 'inline-block' : 'none';
 		}
@@ -1251,6 +1665,242 @@
 			}
 		}
 
+		// NUEVO: procesar inventario y finanzas de factura
+		async function processInvoiceInventoryAndFinance(invoice){
+			const inventory = await loadInventory();
+			
+			// descontar inventario
+			for(const item of invoice.items){
+				if(item.inventoryItemId){
+					const idx = inventory.findIndex(i => i.id === item.inventoryItemId);
+					if(idx !== -1){
+						inventory[idx].stock = Number(inventory[idx].stock || 0) - Number(item.quantity || 0);
+						inventory[idx].updatedAt = new Date().toISOString();
+					}
+				}
+			}
+			await saveInventory(inventory);
+
+			// registrar movimientos de inventario
+			const movements = await loadInventoryMovements();
+			for(const item of invoice.items){
+				if(item.inventoryItemId){
+					movements.unshift({
+						id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+						itemId: item.inventoryItemId,
+						type: 'out',
+						qty: item.quantity,
+						unitPrice: item.unitPrice,
+						total: item.total,
+						date: invoice.date,
+						notes: `Factura ${invoice.invoiceNumber}`,
+						invoiceId: invoice.id
+					});
+				}
+			}
+			await saveInventoryMovements(movements);
+
+			// registrar en finanzas si está pagada
+			if(invoice.paymentStatus === 'paid'){
+				const transactions = await loadTransactions();
+				transactions.unshift({
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+					type: 'income',
+					amount: invoice.total,
+					category: 'Ventas',
+					date: invoice.date,
+					notes: `Factura ${invoice.invoiceNumber}`,
+					invoiceId: invoice.id
+				});
+				await saveTransactions(transactions);
+			}
+		}
+
+		/* NUEVO: eliminar factura */
+		async function deleteInvoice(id){
+			const invoices = await loadInvoices();
+			const invoice = invoices.find(i => i.id === id);
+			
+			if(invoice){
+				// restaurar inventario
+				const inventory = await loadInventory();
+				for(const item of invoice.items){
+					if(item.inventoryItemId){
+						const idx = inventory.findIndex(i => i.id === item.inventoryItemId);
+						if(idx !== -1){
+							inventory[idx].stock = Number(inventory[idx].stock || 0) + Number(item.quantity || 0);
+							inventory[idx].updatedAt = new Date().toISOString();
+						}
+					}
+				}
+				await saveInventory(inventory);
+
+				// eliminar movimientos
+				let movements = await loadInventoryMovements();
+				movements = movements.filter(m => m.invoiceId !== id);
+				await saveInventoryMovements(movements);
+
+				// eliminar transacción
+				let transactions = await loadTransactions();
+				transactions = transactions.filter(t => t.invoiceId !== id);
+				await saveTransactions(transactions);
+			}
+
+			const list = invoices.filter(x => x.id !== id);
+			await saveInvoices(list);
+			await renderInvoices();
+			await renderInventory();
+			await renderFinance();
+		}
+
+		/* NUEVO: exportar factura a PDF */
+		async function exportInvoicePDF(id){
+			const invoices = await loadInvoices();
+			const invoice = invoices.find(i => i.id === id);
+			if(!invoice) return alert('Factura no encontrada');
+
+			const clients = await loadClients();
+			const client = clients.find(c => c.id === invoice.clientId) || {name:'--', cedula:'', phone:'', email:'', address:''};
+
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({unit:'pt', format:'letter'});
+			const pageWidth = doc.internal.pageSize.width;
+			const margin = 40;
+			const centerX = pageWidth / 2;
+			let y = 40;
+
+			// Logo
+			try {
+				const logoImage = await loadImageFromUrl('./image.png');
+				const logoSize = 50;
+				doc.addImage(logoImage, 'PNG', margin, y, logoSize, logoSize);
+			} catch(err) {
+				console.error('Error cargando logo:', err);
+			}
+
+			// Título y número de factura
+			doc.setFontSize(20);
+			doc.setFont(undefined, 'bold');
+			doc.text('FACTURA', pageWidth - margin - 100, y + 20);
+			doc.setFontSize(12);
+			doc.setFont(undefined, 'normal');
+			doc.text(invoice.invoiceNumber || '', pageWidth - margin - 100, y + 40);
+
+			y += 70;
+
+			// Información de la empresa (izquierda)
+			doc.setFontSize(10);
+			doc.setFont(undefined, 'bold');
+			doc.text('MIPC COMPUTADORES', margin, y);
+			y += 15;
+			doc.setFont(undefined, 'normal');
+			doc.text('NIT: 900.XXX.XXX-X', margin, y);
+			y += 12;
+			doc.text('Tel: 300 XXX XXXX', margin, y);
+			y += 12;
+			doc.text('Email: info@mipc.com', margin, y);
+
+			// Información del cliente (derecha)
+			y = 110;
+			const rightX = centerX + 20;
+			doc.setFont(undefined, 'bold');
+			doc.text('CLIENTE:', rightX, y);
+			y += 15;
+			doc.setFont(undefined, 'normal');
+			doc.text(client.name, rightX, y);
+			y += 12;
+			if(client.cedula) { doc.text(`Cédula: ${client.cedula}`, rightX, y); y += 12; }
+			if(client.phone) { doc.text(`Tel: ${client.phone}`, rightX, y); y += 12; }
+			if(client.email) { doc.text(`Email: ${client.email}`, rightX, y); y += 12; }
+
+			y = Math.max(y, 180) + 20;
+
+			// Fecha
+			doc.setFont(undefined, 'bold');
+			doc.text(`Fecha: `, margin, y);
+			doc.setFont(undefined, 'normal');
+			doc.text(invoice.date || '', margin + 50, y);
+
+			y += 30;
+
+			// Línea separadora
+			doc.setLineWidth(1);
+			doc.line(margin, y, pageWidth - margin, y);
+			y += 20;
+
+			// Tabla de ítems
+			doc.setFontSize(9);
+			doc.setFont(undefined, 'bold');
+			
+			const colX = [margin, margin + 250, margin + 320, margin + 400, margin + 480];
+			doc.text('Descripción', colX[0], y);
+			doc.text('Cant.', colX[1], y);
+			doc.text('Precio u.', colX[2], y);
+			doc.text('Total', colX[3], y);
+			
+			y += 15;
+			doc.setLineWidth(0.5);
+			doc.line(margin, y - 5, pageWidth - margin, y - 5);
+			
+			doc.setFont(undefined, 'normal');
+			
+			invoice.items.forEach(item => {
+				if(y > 700){
+					doc.addPage();
+					y = 40;
+				}
+				
+				doc.text(item.description || '', colX[0], y, {maxWidth: 240});
+				doc.text(String(item.quantity || 0), colX[1], y);
+				doc.text(formatCurrency(item.unitPrice || 0), colX[2], y);
+				doc.text(formatCurrency(item.total || 0), colX[3], y);
+				
+				y += 20;
+			});
+
+			y += 10;
+			doc.line(margin, y, pageWidth - margin, y);
+			y += 20;
+
+			// Totales
+			const totalsX = pageWidth - margin - 150;
+			doc.setFont(undefined, 'normal');
+			doc.text('Subtotal:', totalsX, y);
+			doc.text(formatCurrency(invoice.subtotal || 0), totalsX + 80, y, {align: 'right'});
+			y += 15;
+			
+			doc.text('IVA (19%):', totalsX, y);
+			doc.text(formatCurrency(invoice.tax || 0), totalsX + 80, y, {align: 'right'});
+			y += 15;
+			
+			doc.setFont(undefined, 'bold');
+			doc.setFontSize(11);
+			doc.text('TOTAL:', totalsX, y);
+			doc.text(formatCurrency(invoice.total || 0), totalsX + 80, y, {align: 'right'});
+
+			// Notas
+			if(invoice.notes){
+				y += 30;
+				doc.setFontSize(9);
+				doc.setFont(undefined, 'bold');
+				doc.text('Notas:', margin, y);
+				y += 12;
+				doc.setFont(undefined, 'normal');
+				const notesLines = doc.splitTextToSize(invoice.notes, pageWidth - margin * 2);
+				doc.text(notesLines, margin, y);
+			}
+
+			// Footer
+			y = 750;
+			doc.setFontSize(8);
+			doc.setFont(undefined, 'italic');
+			const footerText = 'Gracias por su compra - Mipc Computadores';
+			const footerWidth = doc.getTextWidth(footerText);
+			doc.text(footerText, centerX - footerWidth/2, y);
+
+			doc.save(`factura_${invoice.invoiceNumber}.pdf`);
+		}
+
 		// helpers
 		function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 
@@ -1397,6 +2047,218 @@
 			// actualizar selects despues de eliminar
 			await populateFinanceCategorySelects();
 			await renderFinance();
+		}
+
+		/* ===================== INVENTARIO ===================== */
+		// Renderizar tabla de inventario
+		async function renderInventory(){
+			const tbody = document.querySelector('#inventory-table tbody');
+			if(!tbody) return;
+			const list = await loadInventory();
+			const filter = (document.getElementById('inv-filter')?.value || '').toLowerCase().trim();
+			const filtered = list.filter(i=>{
+				if(!filter) return true;
+				return [i.name, i.category, i.supplier].filter(Boolean).join(' ').toLowerCase().includes(filter);
+			});
+
+			tbody.innerHTML = '';
+			let totalUnits = 0;
+			let totalValue = 0;
+
+			filtered.forEach(item=>{
+				const stock = Number(item.stock||0);
+				const unitCost = Number(item.unitCost||0);
+				const unitPrice = Number(item.unitPrice||0);
+				totalUnits += stock;
+				totalValue += stock * unitCost;
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td>${item.id}</td>
+					<td>${escapeHtml(item.name||'')}</td>
+					<td><span class="badge-cat">${escapeHtml(item.category||'')}</span></td>
+					<td>${stock}</td>
+					<td>${unitCost?formatCurrency(unitCost):'--'}</td>
+					<td>${unitPrice?formatCurrency(unitPrice):'--'}</td>
+					<td>${escapeHtml(item.supplier||'')}</td>
+					<td>${item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''}</td>
+					<td class="actions">
+						<button class="btn" data-id="${item.id}" data-act="in" title="Entrada" style="background:#7af0a5;color:#04121a">Entrada</button>
+						<button class="btn" data-id="${item.id}" data-act="out" title="Salida" style="background:#ffcc33;color:#04121a">Salida</button>
+						<button class="btn btn-edit" data-id="${item.id}" data-act="edit">Editar</button>
+						<button class="btn btn-delete" data-id="${item.id}" data-act="del">Eliminar</button>
+						<button class="btn" data-id="${item.id}" data-act="hist" style="background:#3bb4ff;color:#04121a">Historial</button>
+					</td>
+				`;
+				tbody.appendChild(tr);
+			});
+
+			// resumen
+			const sum = document.getElementById('inventory-summary');
+			if(sum) sum.textContent = `Ítems: ${filtered.length} — Unidades: ${totalUnits} — Valor (costo): ${formatCurrency(totalValue)}`;
+
+			// acciones
+			tbody.querySelectorAll('button').forEach(btn=>{
+				const id = btn.getAttribute('data-id');
+				const act = btn.getAttribute('data-act');
+				if(act==='edit') btn.onclick = ()=> openInventoryItemModal(id);
+				if(act==='del') btn.onclick = async ()=> { if(confirm('Eliminar ítem?')) await deleteInventoryItem(id); };
+				if(act==='in') btn.onclick = ()=> openMovementModal(id, 'in');
+				if(act==='out') btn.onclick = ()=> openMovementModal(id, 'out');
+				if(act==='hist') btn.onclick = ()=> openMovementsHistory(id);
+			});
+		}
+
+		// Abrir modal para crear/editar ítem
+		async function openInventoryItemModal(id){
+			editingItemId = id || null;
+			const modal = document.getElementById('modal-inventory-item');
+			const form = document.getElementById('form-inventory-item');
+			document.getElementById('modal-inventory-title').textContent = id ? 'Editar ítem' : 'Nuevo ítem';
+			form.reset();
+			if(id){
+				const list = await loadInventory();
+				const it = list.find(x=>x.id===id);
+				if(it){
+					form.name.value = it.name || '';
+					form.category.value = it.category || '';
+					form.stock.value = Number(it.stock||0);
+					form.unitCost.value = it.unitCost ?? '';
+					form.unitPrice.value = it.unitPrice ?? '';
+					form.supplier.value = it.supplier || '';
+					form.notes.value = it.notes || '';
+				}
+			}
+			modal.classList.add('show');
+		}
+
+		// Guardar ítem (crear/editar)
+		async function saveInventoryItemFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+			const list = await loadInventory();
+			const payload = {
+				name: f.name.value,
+				category: f.category.value,
+				stock: Number(f.stock.value||0),
+				unitCost: f.unitCost.value ? Number(f.unitCost.value) : null,
+				unitPrice: f.unitPrice.value ? Number(f.unitPrice.value) : null,
+				supplier: f.supplier.value,
+				notes: f.notes.value,
+				updatedAt: new Date().toISOString()
+			};
+			if(editingItemId){
+				const idx = list.findIndex(x=>x.id===editingItemId);
+				if(idx>-1){ list[idx] = {...list[idx], ...payload}; }
+			} else {
+				list.unshift({
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+					createdAt: new Date().toISOString(),
+					...payload
+				});
+			}
+			await saveInventory(list);
+			closeModal('#modal-inventory-item');
+			await renderInventory();
+		}
+
+		// Eliminar ítem de inventario
+		async function deleteInventoryItem(id){
+			const list = await loadInventory();
+			const newList = list.filter(x=>x.id!==id);
+			await saveInventory(newList);
+			// eliminar movimientos asociados
+			let movs = await loadInventoryMovements();
+			movs = movs.filter(m => m.itemId !== id);
+			await saveInventoryMovements(movs);
+			await renderInventory();
+		}
+
+		// Abrir modal de movimiento (entrada/salida)
+		async function openMovementModal(itemId, type){
+			currentMovementItemId = itemId;
+			currentMovementType = type; // 'in' | 'out'
+			const modal = document.getElementById('modal-movement');
+			const form = document.getElementById('form-movement');
+			form.reset();
+			form.itemId.value = itemId;
+			form.type.value = type;
+			const today = new Date().toISOString().slice(0,10);
+			form.date.value = today;
+			const list = await loadInventory();
+			const it = list.find(x=>x.id===itemId) || {};
+			document.getElementById('modal-movement-title').textContent = type==='in' ? `Entrada — ${it.name||''}` : `Salida — ${it.name||''}`;
+			const hint = document.getElementById('movement-hint');
+			if(hint){
+				const stock = Number(it.stock||0);
+				const txt = type==='in'
+					? `Stock actual: ${stock}. Usa "Valor unitario" como costo de compra.`
+					: `Stock actual: ${stock}. No puedes retirar más de ${stock}. Usa "Valor unitario" como precio de salida si aplica.`;
+				hint.textContent = txt;
+			}
+			modal.classList.add('show');
+		}
+
+		// Guardar movimiento
+		async function saveMovementFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+			const itemId = f.itemId.value;
+			const type = f.type.value; // in | out
+			const qty = Math.max(1, Number(f.qty.value||0));
+			const unitValue = Number(f.unitValue.value||0);
+			const date = f.date.value || new Date().toISOString().slice(0,10);
+			const notes = f.notes.value || '';
+
+			const inv = await loadInventory();
+			const idx = inv.findIndex(x=>x.id===itemId);
+			if(idx===-1) return alert('Ítem no encontrado');
+			const currentStock = Number(inv[idx].stock||0);
+			if(type==='out' && qty > currentStock){
+				return alert('No hay suficiente stock para la salida.');
+			}
+			inv[idx].stock = type==='in' ? currentStock + qty : currentStock - qty;
+			inv[idx].updatedAt = new Date().toISOString();
+			await saveInventory(inv);
+
+			const movs = await loadInventoryMovements();
+			movs.unshift({
+				id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+				itemId,
+				type,
+				qty,
+				unitPrice: unitValue || null,
+				total: unitValue ? unitValue * qty : null,
+				date,
+				notes
+			});
+			await saveInventoryMovements(movs);
+
+			closeModal('#modal-movement');
+			await renderInventory();
+		}
+
+		// Abrir historial de movimientos
+		async function openMovementsHistory(itemId){
+			const modal = document.getElementById('modal-movements-history');
+			const list = await loadInventoryMovements();
+			const filtered = list.filter(m => m.itemId === itemId);
+			const container = document.getElementById('movements-history');
+			container.innerHTML = '';
+			if(filtered.length===0){
+				container.textContent = 'Sin movimientos para este ítem.';
+			} else {
+				filtered.forEach(m => {
+					const div = document.createElement('div');
+					div.className = 'history-item';
+					const sign = m.type==='in' ? '+' : '-';
+					const label = m.type==='in' ? 'Entrada' : 'Salida';
+					const uv = m.unitPrice ? formatCurrency(Number(m.unitPrice)) : '--';
+					const tot = m.total ? formatCurrency(Number(m.total)) : '--';
+					div.innerHTML = `<strong>${label}</strong> ${sign}${m.qty} u. — u:${uv} — total:${tot} — <span class="small">${m.date||''}</span><br><span class="small">${escapeHtml(m.notes||'')}</span>`;
+					container.appendChild(div);
+				});
+			}
+			modal.classList.add('show');
 		}
 
 		function formatCurrency(v){
@@ -1578,7 +2440,7 @@
 					// actualizar la orden en la lista y guardar
 					const idx = orders.findIndex(x=>x.id==id);
 					if(idx>-1){
-						orders[idx] = order;
+					orders[idx] = order;
 						await saveOrders(orders);
 					}
 				}
@@ -1591,7 +2453,446 @@
 				alert('Error al generar el enlace de WhatsApp. Por favor, inténtalo de nuevo.');
 			}
 		}
+
+		/* NUEVO: render de facturas */
+		async function renderInvoices(){
+			const tbody = document.querySelector('#invoices-table tbody');
+			if(!tbody) return;
+			const invoices = await loadInvoices();
+			const clients = await loadClients();
+			const filter = (document.getElementById('invoice-filter')?.value || '').toLowerCase().trim();
+			
+			const filtered = invoices.filter(inv=>{
+				if(!filter) return true;
+				const client = clients.find(c=>c.id===inv.clientId) || {};
+				return [inv.invoiceNumber, client.name].join(' ').toLowerCase().includes(filter);
+			});
+
+			tbody.innerHTML = '';
+			let totalAmount = 0;
+			let paidCount = 0;
+
+			filtered.forEach(inv=>{
+				const client = clients.find(c=>c.id===inv.clientId) || {name:'--'};
+				const subtotal = Number(inv.subtotal || 0);
+				const tax = Number(inv.tax || 0);
+				const total = Number(inv.total || 0);
+				totalAmount += total;
+				
+				let statusBadge = '<span class="badge-status-unpaid">No pagada</span>';
+				if(inv.paymentStatus === 'paid'){
+					statusBadge = '<span class="badge-status-paid">Pagada</span>';
+					paidCount++;
+				} else if(inv.paymentStatus === 'partial'){
+					statusBadge = '<span class="badge-status-partial">Pago parcial</span>';
+				}
+
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td><strong>${escapeHtml(inv.invoiceNumber||'')}</strong></td>
+					<td>${escapeHtml(client.name)}</td>
+					<td>${inv.date || ''}</td>
+					<td>${formatCurrency(subtotal)}</td>
+					<td>${formatCurrency(tax)}</td>
+					<td><strong>${formatCurrency(total)}</strong></td>
+					<td>${statusBadge}</td>
+					<td class="actions">
+						<button class="btn" data-id="${inv.id}" data-act="pdf" style="background:#7af0a5;color:#04121a">PDF</button>
+						<button class="btn btn-edit" data-id="${inv.id}" data-act="edit">Editar</button>
+						<button class="btn btn-delete" data-id="${inv.id}" data-act="del">Eliminar</button>
+					</td>
+				`;
+				tbody.appendChild(tr);
+			});
+
+			const sum = document.getElementById('invoices-summary');
+			if(sum) sum.textContent = `Facturas: ${filtered.length} — Pagadas: ${paidCount} — Total facturado: ${formatCurrency(totalAmount)}`;
+
+			// acciones
+			tbody.querySelectorAll('button').forEach(btn=>{
+				const id = btn.getAttribute('data-id');
+				const act = btn.getAttribute('data-act');
+				if(act==='edit') btn.onclick = ()=> openInvoiceModal(id);
+				if(act==='del') btn.onclick = async ()=> { if(confirm('Eliminar factura?')) await deleteInvoice(id); };
+				if(act==='pdf') btn.onclick = async ()=> await exportInvoicePDF(id);
+			});
+		}
+
+		/* NUEVO: abrir modal de factura */
+		async function openInvoiceModal(id){
+			editingInvoiceId = id || null;
+			const modal = document.getElementById('modal-invoice');
+			const form = document.getElementById('form-invoice');
+			document.getElementById('modal-invoice-title').textContent = id ? 'Editar factura' : 'Nueva factura';
+			
+			form.reset();
+			form.date.value = new Date().toISOString().slice(0,10);
+			
+			// poblar selector de clientes
+			const clientSelect = form.querySelector('select[name="clientId"]');
+			const clients = await loadClients();
+			clientSelect.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
+			clients.forEach(c => {
+				const opt = document.createElement('option');
+				opt.value = c.id;
+				opt.textContent = c.name;
+				clientSelect.appendChild(opt);
+			});
+
+			if(id){
+				const invoices = await loadInvoices();
+				const inv = invoices.find(x=>x.id==id);
+				if(inv){
+					form.clientId.value = inv.clientId || '';
+					form.invoiceNumber.value = inv.invoiceNumber || '';
+					form.date.value = inv.date || '';
+					form.paymentStatus.value = inv.paymentStatus || 'unpaid';
+					form.notes.value = inv.notes || '';
+					invoiceItems = inv.items ? [...inv.items] : [];
+				}
+			} else {
+				// generar número de factura
+				const invoices = await loadInvoices();
+				const lastNumber = invoices.length > 0 ? Math.max(...invoices.map(i => {
+					const num = i.invoiceNumber ? parseInt(i.invoiceNumber.replace(/\D/g, '')) : 0;
+					return isNaN(num) ? 0 : num;
+				})) : 0;
+				form.invoiceNumber.value = `FAC-${String(lastNumber + 1).padStart(6, '0')}`;
+				invoiceItems = [];
+			}
+
+			renderInvoiceItems();
+			modal.classList.add('show');
+		}
+
+		/* NUEVO: agregar fila de ítem */
+		function addInvoiceItemRow(){
+			invoiceItems.push({
+				id: Date.now().toString(),
+				description: '',
+				inventoryItemId: '',
+				quantity: 1,
+				unitPrice: 0,
+				total: 0
+			});
+			renderInvoiceItems();
+		}
+
+		/* NUEVO: renderizar ítems de factura */
+		async function renderInvoiceItems(){
+			const container = document.getElementById('invoice-items-list');
+			container.innerHTML = '';
+			
+			const inventory = await loadInventory();
+
+			invoiceItems.forEach((item, index) => {
+				const div = document.createElement('div');
+				div.className = 'invoice-item-row';
+				
+				// selector de inventario
+				let inventorySelect = '<select data-index="' + index + '" class="item-inventory">';
+				inventorySelect += '<option value="">-- Manual --</option>';
+				inventory.forEach(inv => {
+					const selected = inv.id === item.inventoryItemId ? ' selected' : '';
+					const stock = Number(inv.stock || 0);
+					const price = inv.unitPrice ? formatCurrency(Number(inv.unitPrice)) : '';
+					inventorySelect += `<option value="${inv.id}" data-price="${inv.unitPrice||0}" data-stock="${stock}"${selected}>${escapeHtml(inv.name)} (Stock: ${stock}, ${price})</option>`;
+				});
+				inventorySelect += '</select>';
+
+				div.innerHTML = `
+					${inventorySelect}
+					<input type="text" placeholder="Descripción" value="${escapeHtml(item.description||'')}" data-index="${index}" class="item-description">
+					<input type="number" placeholder="Cant." min="1" step="1" value="${item.quantity||1}" data-index="${index}" class="item-quantity" style="max-width:80px">
+					<input type="number" placeholder="Precio u." min="0" step="0.01" value="${item.unitPrice||0}" data-index="${index}" class="item-price" style="max-width:120px">
+					<div class="small" style="max-width:120px">Total: ${formatCurrency(item.total||0)}</div>
+					<button type="button" class="btn btn-delete" data-index="${index}" style="padding:6px 10px">✕</button>
+				`;
+				
+				container.appendChild(div);
+			});
+
+			// bindings
+			$$('.item-inventory').forEach(sel => {
+				sel.onchange = (e) => {
+					const idx = parseInt(e.target.dataset.index);
+					const selectedOpt = e.target.options[e.target.selectedIndex];
+					if(selectedOpt.value){
+						const invItem = inventory.find(i => i.id === selectedOpt.value);
+						if(invItem){
+							invoiceItems[idx].inventoryItemId = invItem.id;
+							invoiceItems[idx].description = invItem.name;
+							invoiceItems[idx].unitPrice = Number(invItem.unitPrice || 0);
+							updateItemTotal(idx);
+							renderInvoiceItems();
+						}
+					} else {
+						invoiceItems[idx].inventoryItemId = '';
+					}
+				};
+			});
+
+			$$('.item-description').forEach(inp => {
+				inp.oninput = (e) => {
+					const idx = parseInt(e.target.dataset.index);
+					invoiceItems[idx].description = e.target.value;
+				};
+			});
+
+			$$('.item-quantity').forEach(inp => {
+				inp.oninput = (e) => {
+					const idx = parseInt(e.target.dataset.index);
+					invoiceItems[idx].quantity = Number(e.target.value) || 1;
+					updateItemTotal(idx);
+					renderInvoiceItems();
+				};
+			});
+
+			$$('.item-price').forEach(inp => {
+				inp.oninput = (e) => {
+					const idx = parseInt(e.target.dataset.index);
+					invoiceItems[idx].unitPrice = Number(e.target.value) || 0;
+					updateItemTotal(idx);
+					renderInvoiceItems();
+				};
+			});
+
+			$$('.invoice-item-row .btn-delete').forEach(btn => {
+				btn.onclick = (e) => {
+					const idx = parseInt(e.target.dataset.index);
+					invoiceItems.splice(idx, 1);
+					renderInvoiceItems();
+				};
+			});
+
+			updateInvoiceTotals();
+		}
+
+		/* NUEVO: actualizar total de un ítem */
+		function updateItemTotal(index){
+			const item = invoiceItems[index];
+			item.total = (item.quantity || 0) * (item.unitPrice || 0);
+		}
+
+		/* NUEVO: actualizar totales de la factura */
+		function updateInvoiceTotals(){
+			const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
+			const tax = subtotal * 0.19; // IVA 19%
+			const total = subtotal + tax;
+
+			$('#invoice-subtotal').textContent = formatCurrency(subtotal);
+			$('#invoice-tax').textContent = formatCurrency(tax);
+			$('#invoice-total').textContent = formatCurrency(total);
+		}
+
+		/* NUEVO: guardar factura */
+		async function saveInvoiceFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+
+			if(invoiceItems.length === 0){
+				alert('Debes agregar al menos un ítem a la factura');
+				return;
+			}
+
+			const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
+			const tax = subtotal * 0.19;
+			const total = subtotal + tax;
+
+			const invoices = await loadInvoices();
+
+			if(editingInvoiceId){
+				const idx = invoices.findIndex(x=>x.id==editingInvoiceId);
+				if(idx>-1){
+					invoices[idx] = {
+						...invoices[idx],
+						clientId: f.clientId.value,
+						invoiceNumber: f.invoiceNumber.value,
+						date: f.date.value,
+						paymentStatus: f.paymentStatus.value,
+						notes: f.notes.value,
+						items: invoiceItems,
+						subtotal,
+						tax,
+						total,
+						updatedAt: new Date().toISOString()
+					};
+				}
+			} else {
+				const invoice = {
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+					clientId: f.clientId.value,
+					invoiceNumber: f.invoiceNumber.value,
+					date: f.date.value,
+					paymentStatus: f.paymentStatus.value,
+					notes: f.notes.value,
+					items: invoiceItems,
+					subtotal,
+					tax,
+					total,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString()
+				};
+				invoices.unshift(invoice);
+
+				// descontar inventario y registrar en finanzas si está pagada
+				await processInvoiceInventoryAndFinance(invoice);
+			}
+
+			await saveInvoices(invoices);
+			closeModal('#modal-invoice');
+			await renderInvoices();
+			await renderInventory();
+			await renderFinance();
+		}
+
+		/* NUEVO: exportar factura a PDF */
+		async function exportInvoicePDF(id){
+			const invoices = await loadInvoices();
+			const invoice = invoices.find(i => i.id === id);
+			if(!invoice) return alert('Factura no encontrada');
+
+			const clients = await loadClients();
+			const client = clients.find(c => c.id === invoice.clientId) || {name:'--', cedula:'', phone:'', email:'', address:''};
+
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({unit:'pt', format:'letter'});
+			const pageWidth = doc.internal.pageSize.width;
+			const margin = 40;
+			const centerX = pageWidth / 2;
+			let y = 40;
+
+			// Logo
+			try {
+				const logoImage = await loadImageFromUrl('./image.png');
+				const logoSize = 50;
+				doc.addImage(logoImage, 'PNG', margin, y, logoSize, logoSize);
+			} catch(err) {
+				console.error('Error cargando logo:', err);
+			}
+
+			// Título y número de factura
+			doc.setFontSize(20);
+			doc.setFont(undefined, 'bold');
+			doc.text('FACTURA', pageWidth - margin - 100, y + 20);
+			doc.setFontSize(12);
+			doc.setFont(undefined, 'normal');
+			doc.text(invoice.invoiceNumber || '', pageWidth - margin - 100, y + 40);
+
+			y += 70;
+
+			// Información de la empresa (izquierda)
+			doc.setFontSize(10);
+			doc.setFont(undefined, 'bold');
+			doc.text('MIPC COMPUTADORES', margin, y);
+			y += 15;
+			doc.setFont(undefined, 'normal');
+			doc.text('NIT: 900.XXX.XXX-X', margin, y);
+			y += 12;
+			doc.text('Tel: 300 XXX XXXX', margin, y);
+			y += 12;
+			doc.text('Email: info@mipc.com', margin, y);
+
+			// Información del cliente (derecha)
+			y = 110;
+			const rightX = centerX + 20;
+			doc.setFont(undefined, 'bold');
+			doc.text('CLIENTE:', rightX, y);
+			y += 15;
+			doc.setFont(undefined, 'normal');
+			doc.text(client.name, rightX, y);
+			y += 12;
+			if(client.cedula) { doc.text(`Cédula: ${client.cedula}`, rightX, y); y += 12; }
+			if(client.phone) { doc.text(`Tel: ${client.phone}`, rightX, y); y += 12; }
+			if(client.email) { doc.text(`Email: ${client.email}`, rightX, y); y += 12; }
+
+			y = Math.max(y, 180) + 20;
+
+			// Fecha
+			doc.setFont(undefined, 'bold');
+			doc.text(`Fecha: `, margin, y);
+			doc.setFont(undefined, 'normal');
+			doc.text(invoice.date || '', margin + 50, y);
+
+			y += 30;
+
+			// Línea separadora
+			doc.setLineWidth(1);
+			doc.line(margin, y, pageWidth - margin, y);
+			y += 20;
+
+			// Tabla de ítems
+			doc.setFontSize(9);
+			doc.setFont(undefined, 'bold');
+			
+			const colX = [margin, margin + 250, margin + 320, margin + 400, margin + 480];
+			doc.text('Descripción', colX[0], y);
+			doc.text('Cant.', colX[1], y);
+			doc.text('Precio u.', colX[2], y);
+			doc.text('Total', colX[3], y);
+			
+			y += 15;
+			doc.setLineWidth(0.5);
+			doc.line(margin, y - 5, pageWidth - margin, y - 5);
+			
+			doc.setFont(undefined, 'normal');
+			
+			invoice.items.forEach(item => {
+				if(y > 700){
+					doc.addPage();
+					y = 40;
+				}
+				
+				doc.text(item.description || '', colX[0], y, {maxWidth: 240});
+				doc.text(String(item.quantity || 0), colX[1], y);
+				doc.text(formatCurrency(item.unitPrice || 0), colX[2], y);
+				doc.text(formatCurrency(item.total || 0), colX[3], y);
+				
+				y += 20;
+			});
+
+			y += 10;
+			doc.line(margin, y, pageWidth - margin, y);
+			y += 20;
+
+			// Totales
+			const totalsX = pageWidth - margin - 150;
+			doc.setFont(undefined, 'normal');
+			doc.text('Subtotal:', totalsX, y);
+			doc.text(formatCurrency(invoice.subtotal || 0), totalsX + 80, y, {align: 'right'});
+			y += 15;
+			
+			doc.text('IVA (19%):', totalsX, y);
+			doc.text(formatCurrency(invoice.tax || 0), totalsX + 80, y, {align: 'right'});
+			y += 15;
+			
+			doc.setFont(undefined, 'bold');
+			doc.setFontSize(11);
+			doc.text('TOTAL:', totalsX, y);
+			doc.text(formatCurrency(invoice.total || 0), totalsX + 80, y, {align: 'right'});
+
+			// Notas
+			if(invoice.notes){
+				y += 30;
+				doc.setFontSize(9);
+				doc.setFont(undefined, 'bold');
+				doc.text('Notas:', margin, y);
+				y += 12;
+				doc.setFont(undefined, 'normal');
+				const notesLines = doc.splitTextToSize(invoice.notes, pageWidth - margin * 2);
+				doc.text(notesLines, margin, y);
+			}
+
+			// Footer
+			y = 750;
+			doc.setFontSize(8);
+			doc.setFont(undefined, 'italic');
+			const footerText = 'Gracias por su compra - Mipc Computadores';
+			const footerWidth = doc.getTextWidth(footerText);
+			doc.text(footerText, centerX - footerWidth/2, y);
+
+			doc.save(`factura_${invoice.invoiceNumber}.pdf`);
+		}
 	</script>
 </body>
-
 </html>
