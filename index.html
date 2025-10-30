@@ -293,15 +293,25 @@
 
 	<script>
 		// NUEVO: URL del API
-		const API_URL = "https://pregnancy-essentially-perspectives-chapters.trycloudflare.com/api";
-
+		const API_URL = "http://31.97.103.200:3000/api";
 
 		// funciones reutilizables para comunicarse con el backend
 		async function loadTable(table) {
 			try {
-				const res = await fetch(`${API_URL}/${table}`);
-				if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-				return await res.json();
+				// evitar cache para ver respuesta real del servidor
+				const res = await fetch(`${API_URL}/${table}`, { cache: 'no-store', mode: 'cors' });
+				// leer como texto para poder mostrar body incluso si no es JSON válido
+				const text = await res.text();
+				if (!res.ok) {
+					console.error(`loadTable ${table} -> HTTP ${res.status} ${res.statusText}`, text);
+					return [];
+				}
+				try {
+					return text ? JSON.parse(text) : [];
+				} catch (parseErr) {
+					console.error(`loadTable ${table} -> JSON parse error:`, parseErr, 'body:', text);
+					return [];
+				}
 			} catch (err) {
 				console.error("Error al cargar datos:", err);
 				return [];
@@ -310,11 +320,31 @@
 
 		async function saveTable(table, data) {
 			try {
-				await fetch(`${API_URL}/${table}`, {
+				// registrar lo que vamos a enviar (no mostrar imágenes pesadas completas aquí si existen)
+				try {
+					const preview = Array.isArray(data) ? data.slice(0,5) : data;
+					console.debug(`saveTable ${table} -> payload preview:`, preview);
+				} catch(e){ console.debug('saveTable preview error', e); }
+
+				const res = await fetch(`${API_URL}/${table}`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(data)
+					body: JSON.stringify(data),
+					cache: 'no-store',
+					mode: 'cors'
 				});
+				const text = await res.text();
+				if (!res.ok) {
+					console.error(`saveTable ${table} -> HTTP ${res.status} ${res.statusText}`, text);
+				} else {
+					// intentar parsear respuesta para mostrarla
+					try {
+						const json = text ? JSON.parse(text) : null;
+						console.info(`saveTable ${table} -> OK ${res.status}`, json);
+					} catch (e) {
+						console.info(`saveTable ${table} -> OK ${res.status}`, 'body:', text);
+					}
+				}
 			} catch (err) {
 				console.error("Error al guardar datos:", err);
 			}
@@ -530,6 +560,8 @@
 
 		// eliminar orden (ahora asíncrono)
 		async function deleteOrder(id){
+			// antes de eliminar, mostrar id y carga actual para diagnostico
+			console.debug('deleteOrder -> id:', id);
 			const list = (await loadOrders()).filter(x=>x.id!=id);
 			await saveOrders(list);
 			await renderOrders();
@@ -749,67 +781,21 @@
 				list.unshift(item);
 				await upsertEquipmentFromOrder(item);
 			}
+
+			// LOG: mostrar tamaño y primer/último elementos para inspección
+			try {
+				console.debug('saveOrderFromForm -> orders list length:', list.length);
+				if(list.length > 0) {
+					console.debug('saveOrderFromForm -> first item preview:', Object.assign({}, list[0], { images: list[0].images && list[0].images.length }));
+				}
+			} catch(e){ console.debug('debug error', e); }
+
 			await saveOrders(list);
 			closeModal('#modal-order');
 			await renderOrders();
 		}
 
-		// nueva función: actualizar estado rápidamente
-		async function updateOrderStatus(id, newStatus){
-			const list = await loadOrders();
-			const idx = list.findIndex(x=>x.id==id);
-			if(idx===-1) return;
-			list[idx].status = newStatus;
-			await upsertEquipmentFromOrder({...list[idx], date: new Date().toISOString()});
-			await saveOrders(list);
-			await renderOrders();
-		}
-
-		// Clients (ahora asíncrono)
-		async function renderClients(){
-			const tbody = $('#clients-table tbody');
-			const items = await loadClients();
-			tbody.innerHTML = '';
-			items.forEach(c=>{
-				const tr = document.createElement('tr');
-				tr.innerHTML = `
-					<td>${c.id}</td>
-					<td>${escapeHtml(c.name)}</td>
-					<td>${escapeHtml(c.cedula||'')}</td>
-					<td>${escapeHtml(c.phone||'')}</td>
-					<td>${escapeHtml(c.email||'')}</td>
-					<td>
-						<button class="btn btn-edit" data-id="${c.id}">Editar</button>
-						<button class="btn btn-delete" data-id="${c.id}">Eliminar</button>
-					</td>
-				`;
-				tbody.appendChild(tr);
-			});
-			$$('#clients-table .btn-edit').forEach(b=>b.onclick = ()=> openClientModal(b.dataset.id));
-			$$('#clients-table .btn-delete').forEach(b=>b.onclick = async ()=> { if(confirm('Eliminar cliente?')) await deleteClient(b.dataset.id) });
-			// actualizar métricas al renderizar clientes
-			await computeMetrics();
-		}
-
-		async function openClientModal(id){
-			editingClientId = id || null;
-			const modal = $('#modal-client');
-			$('#modal-client-title').textContent = id ? 'Editar cliente' : 'Nuevo cliente';
-			const form = $('#form-client');
-			form.reset();
-			if(id){
-				const item = (await loadClients()).find(x=>x.id==id);
-				if(item){
-					form.name.value = item.name || '';
-					form.cedula.value = item.cedula || '';
-					form.phone.value = item.phone || '';
-					form.email.value = item.email || '';
-					form.address.value = item.address || '';
-				}
-			}
-			modal.classList.add('show');
-		}
-
+		// añadir logs en creación/edición/eliminación de clientes y transacciones para diagnóstico
 		async function saveClientFromForm(e){
 			e.preventDefault();
 			const f = e.target;
@@ -838,6 +824,8 @@
 				list.unshift(item);
 				newClientId = item.id;
 			}
+
+			console.debug('saveClientFromForm -> clients length:', list.length, 'preview:', list[0] || null);
 			await saveClients(list);
 
 			// repoblar select de clientes en el formulario de orden
@@ -857,7 +845,37 @@
 			await renderClients();
 		}
 
+		async function saveTransactionFromForm(e){
+			e.preventDefault();
+			const f = e.target;
+			const list = await loadTransactions();
+			const item = {
+				id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+				type: f.type.value,
+				amount: Number(f.amount.value || 0),
+				category: f.category.value,
+				date: f.date.value || new Date().toISOString().slice(0,10),
+				notes: f.notes.value
+			};
+			list.unshift(item);
+			console.debug('saveTransactionFromForm -> transactions length:', list.length, 'item:', item);
+			await saveTransactions(list);
+			f.reset();
+			await renderFinance();
+		}
+
+		async function deleteOrder(id){
+			// antes de eliminar, mostrar id y carga actual para diagnostico
+			console.debug('deleteOrder -> id:', id);
+			const list = (await loadOrders()).filter(x=>x.id!=id);
+			await saveOrders(list);
+			await renderOrders();
+			await renderFinance();
+			await computeMetrics();
+		}
+
 		async function deleteClient(id){
+			console.debug('deleteClient -> id:', id);
 			const list = (await loadClients()).filter(x=>x.id!=id);
 			await saveClients(list);
 			await renderClients();
@@ -865,151 +883,11 @@
 			await populateClientSelect();
 		}
 
-		// Helpers para clientes
-		async function populateClientSelect(){
-			const sel = document.querySelector('#form-order select[name="clientId"]');
-			const clients = await loadClients();
-			if(!sel) return;
-			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
-			clients.forEach(c => {
-				const opt = document.createElement('option');
-				opt.value = c.id; opt.textContent = c.name;
-				sel.appendChild(opt);
-			});
-		}
-		async function findClientById(id){ const clients = await loadClients(); return clients.find(c=>c.id==id); }
-
-		// Equipments: hoja de vida por serial (asíncrono)
-		async function upsertEquipmentFromOrder(order){
-			if(!order.serial) return;
-			const list = await loadEquipments();
-			let eq = list.find(e => e.serial && e.serial.toLowerCase() === order.serial.toLowerCase());
-			const entry = {
-				orderId: order.id,
-				date: order.date || new Date().toISOString(),
-				clientId: order.clientId,
-				brand: order.brand,
-				model: order.model,
-				accessories: order.accessories,
-				failure: order.failure,
-				technician: order.technician,
-				notes: order.notes,
-				status: order.status || 'ingresado'
-			};
-			if(eq){
-				eq.brand = order.brand || eq.brand;
-				eq.model = order.model || eq.model;
-				eq.clientId = order.clientId || eq.clientId;
-				eq.history = eq.history || [];
-				eq.history.unshift(entry);
-			} else {
-				eq = {
-					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
-					serial: order.serial,
-					brand: order.brand,
-					model: order.model,
-					clientId: order.clientId,
-					history: [entry]
-				};
-				list.unshift(eq);
-			}
-			await saveEquipments(list);
-		}
-
-		// Export / Import (ahora usan el backend)
-		async function exportData(){
-			const data = { orders: await loadOrders(), clients: await loadClients(), equipments: await loadEquipments(), transactions: await loadTransactions(), exportedAt: new Date().toISOString() };
-			const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url; a.download = 'mipc_data.json'; a.click();
-			URL.revokeObjectURL(url);
-		}
-		async function importDataFile(e){
-			const file = e.target.files[0];
-			if(!file) return;
-			const reader = new FileReader();
-			reader.onload = async ev => {
-				try {
-					const data = JSON.parse(ev.target.result);
-					if(Array.isArray(data.orders)) await saveOrders(data.orders);
-					if(Array.isArray(data.clients)) await saveClients(data.clients);
-					if(Array.isArray(data.equipments)) await saveEquipments(data.equipments);
-					if(Array.isArray(data.transactions)) await saveTransactions(data.transactions);
-					alert('Importación completada');
-					await renderOrders(); await renderClients();
-					await renderFinance();
-				} catch(err){
-					alert('Archivo inválido');
-				}
-			};
-			reader.readAsText(file);
-			e.target.value = '';
-		}
-
-		// Exportar órdenes a PDF (usa jsPDF) - ahora async para obtener datos
-		async function exportOrdersPDF(){
-			const orders = await loadOrders();
-			if(!orders || orders.length===0) return alert('No hay órdenes para exportar.');
-			const clients = await loadClients();
-			const { jsPDF } = window.jspdf;
-			const doc = new jsPDF({unit:'pt', format:'letter'});
-			const margin = 40;
-			let y = 40;
-			const lineHeight = 14;
-			const pageHeight = doc.internal.pageSize.height;
-			doc.setFontSize(14);
-			doc.text('Órdenes - Mipc Computadores', margin, y);
-			y += 20;
-			doc.setFontSize(10);
-
-			const cols = ['ID','Cliente','Marca','Modelo','Serie','Estado','Pago','Técnico','Fecha'];
-			const colWidths = [40,100,60,60,80,70,50,80,80];
-			const startX = margin;
-
-			function printRow(values){
-				let x = startX;
-				for(let i=0;i<values.length;i++){
-					const txt = (values[i]===null||values[i]===undefined)?'':String(values[i]);
-					doc.text(truncateText(txt, Math.floor(colWidths[i]/6)), x, y);
-					x += colWidths[i];
-				}
-				y += lineHeight;
-			}
-
-			printRow(cols);
-			doc.setLineWidth(0.5);
-			doc.line(margin, y-8, pageHeight - margin, y-8);
-
-			orders.forEach((o, idx)=>{
-				const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
-				const statusLabel = ORDER_STATUSES[o.status || 'ingresado'] || (o.status||'');
-				const paymentLabel = o.paid ? 'Sí' : 'No';
-				const row = [
-					o.id,
-					client.name,
-					o.brand || '',
-					o.model || '',
-					o.serial || '',
-					statusLabel,
-					paymentLabel,
-					o.technician || '',
-					o.date ? new Date(o.date).toLocaleString() : ''
-				];
-				if(y + lineHeight > pageHeight - margin){
-					doc.addPage();
-					y = margin;
-				}
-				printRow(row);
-			});
-
-			doc.save('ordenes_mipc.pdf');
-
-			function truncateText(str, maxChars){
-				if(!str) return '';
-				if(str.length <= maxChars) return str;
-				return str.slice(0, maxChars-3) + '...';
-			}
+		async function deleteTransaction(id){
+			console.debug('deleteTransaction -> id:', id);
+			const list = (await loadTransactions()).filter(x=>x.id!=id);
+			await saveTransactions(list);
+			await renderFinance();
 		}
 
 		// helpers
@@ -1149,14 +1027,9 @@
 				notes: f.notes.value
 			};
 			list.unshift(item);
+			console.debug('saveTransactionFromForm -> transactions length:', list.length, 'item:', item);
 			await saveTransactions(list);
 			f.reset();
-			await renderFinance();
-		}
-
-		async function deleteTransaction(id){
-			const list = (await loadTransactions()).filter(x=>x.id!=id);
-			await saveTransactions(list);
 			await renderFinance();
 		}
 
@@ -1276,5 +1149,4 @@
 		}
 	</script>
 </body>
-
 </html>
