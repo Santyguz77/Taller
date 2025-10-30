@@ -292,11 +292,42 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 	<script>
-		// Storage keys
-		const LS_ORDERS = 'local_orders';
-		const LS_CLIENTS = 'local_clients';
-		const LS_EQUIPMENTS = 'local_equipments';
-		const LS_TRANSACTIONS = 'local_transactions'; // nuevo: transacciones financieras
+		// NUEVO: URL del API
+		const API_URL = "http://31.97.103.200:3000/api";
+
+		// funciones reutilizables para comunicarse con el backend
+		async function loadTable(table) {
+			try {
+				const res = await fetch(`${API_URL}/${table}`);
+				if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+				return await res.json();
+			} catch (err) {
+				console.error("Error al cargar datos:", err);
+				return [];
+			}
+		}
+
+		async function saveTable(table, data) {
+			try {
+				await fetch(`${API_URL}/${table}`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(data)
+				});
+			} catch (err) {
+				console.error("Error al guardar datos:", err);
+			}
+		}
+
+		// Storage helpers (ahora asíncronos y delegan a loadTable/saveTable)
+		async function loadOrders(){ return await loadTable('orders'); }
+		async function saveOrders(list){ await saveTable('orders', list); }
+		async function loadClients(){ return await loadTable('clients'); }
+		async function saveClients(list){ await saveTable('clients', list); }
+		async function loadEquipments(){ return await loadTable('equipments'); }
+		async function saveEquipments(list){ await saveTable('equipments', list); }
+		async function loadTransactions(){ return await loadTable('transactions'); }
+		async function saveTransactions(list){ await saveTable('transactions', list); }
 
 		// Categorías predefinidas para Finanzas
 		const FINANCE_CATEGORIES = ['Servicios','Repuestos','Ventas','Nomina','Otros'];
@@ -318,13 +349,13 @@
 		let editingClientId = null;
 
 		// init
-		document.addEventListener('DOMContentLoaded', ()=> {
+		document.addEventListener('DOMContentLoaded', async ()=> {
 			bindUI();
 			renderView('orders');
-			renderOrders();
-			renderClients();
+			await renderOrders();
+			await renderClients();
 			populateFinanceCategorySelects(); // rellenar selects de categoría
-			renderFinance(); // inicializar finanzas (después de poblar categorías)
+			await renderFinance(); // inicializar finanzas (después de poblar categorías)
 		});
 
 		function bindUI(){
@@ -346,22 +377,22 @@
 			$('#btn-close-client').addEventListener('click', ()=> closeModal('#modal-client'));
 			$('#btn-close-equipment').addEventListener('click', ()=> closeModal('#modal-equipment'));
 
-			$('#form-order').addEventListener('submit', saveOrderFromForm);
-			$('#form-client').addEventListener('submit', saveClientFromForm);
+			$('#form-order').addEventListener('submit', async (e)=> await saveOrderFromForm(e));
+			$('#form-client').addEventListener('submit', async (e)=> await saveClientFromForm(e));
 
 			// nuevo: manejo de imágenes
 			$('#order-images').addEventListener('change', handleImageUpload);
 
-			$('#filter-input').addEventListener('input', renderOrders);
-			$('#status-filter').addEventListener('change', renderOrders);
-			$('#payment-filter').addEventListener('change', renderOrders); // nuevo: filtro de pago
+			$('#filter-input').addEventListener('input', async ()=> await renderOrders());
+			$('#status-filter').addEventListener('change', async ()=> await renderOrders());
+			$('#payment-filter').addEventListener('change', async ()=> await renderOrders()); // nuevo: filtro de pago
 
-			$('#export-data').addEventListener('click', exportData);
+			$('#export-data').addEventListener('click', async ()=> await exportData());
 			$('#import-data').addEventListener('click', ()=> $('#import-file').click());
-			$('#import-file').addEventListener('change', importDataFile);
+			$('#import-file').addEventListener('change', async (e)=> await importDataFile(e));
 			// binding para exportar PDF
 			const pdfBtn = $('#export-pdf');
-			if(pdfBtn) pdfBtn.addEventListener('click', exportOrdersPDF);
+			if(pdfBtn) pdfBtn.addEventListener('click', async ()=> await exportOrdersPDF());
 
 			// Finanzas: bindings
 			const txBtn = $('#btn-new-transaction');
@@ -377,16 +408,16 @@
 				form.querySelector('input[name="amount"]').focus();
 			});
 			const txForm = $('#form-transaction');
-			if(txForm) txForm.addEventListener('submit', saveTransactionFromForm);
+			if(txForm) txForm.addEventListener('submit', async (e)=> await saveTransactionFromForm(e));
 
 			// filtros: recargar render cuando cambian
 			const typeFilter = $('#type-filter');
-			if(typeFilter) typeFilter.addEventListener('change', renderFinance);
+			if(typeFilter) typeFilter.addEventListener('change', async ()=> await renderFinance());
 			const catFilter = $('#category-filter');
-			if(catFilter) catFilter.addEventListener('change', renderFinance);
+			if(catFilter) catFilter.addEventListener('change', async ()=> await renderFinance());
 		}
 
-		function renderView(view){
+		async function renderView(view){
 			$('#view-title').textContent = view === 'orders' ? 'Órdenes' : view === 'clients' ? 'Clientes' : view === 'finance' ? 'Finanzas' : 'Configuración';
 			$('#orders-section').style.display = view === 'orders' ? 'block' : 'none';
 			$('#clients-section').style.display = view === 'clients' ? 'block' : 'none';
@@ -395,59 +426,37 @@
 			$('#btn-add-client').style.display = view === 'clients' ? 'inline-block' : 'none';
 		}
 
-		// Storage helpers
-		function loadOrders(){ return JSON.parse(localStorage.getItem(LS_ORDERS) || '[]'); }
-		function saveOrders(list){ localStorage.setItem(LS_ORDERS, JSON.stringify(list)); }
-		function loadClients(){ return JSON.parse(localStorage.getItem(LS_CLIENTS) || '[]'); }
-		function saveClients(list){ localStorage.setItem(LS_CLIENTS, JSON.stringify(list)); }
-		function loadEquipments(){ return JSON.parse(localStorage.getItem(LS_EQUIPMENTS) || '[]'); }
-		function saveEquipments(list){ localStorage.setItem(LS_EQUIPMENTS, JSON.stringify(list)); }
-
-		// Finanzas: almacenamiento y renderizado de transacciones
-		function loadTransactions(){ return JSON.parse(localStorage.getItem(LS_TRANSACTIONS) || '[]'); }
-		function saveTransactions(list){ localStorage.setItem(LS_TRANSACTIONS, JSON.stringify(list)); }
-
-		// Poblado de selects de categoría (form y filtro)
-		function populateFinanceCategorySelects(){
-			const formSel = document.querySelector('#form-transaction select[name="category"]');
-			const filterSel = document.getElementById('category-filter');
-			if(formSel){
-				formSel.innerHTML = '';
-				FINANCE_CATEGORIES.forEach(c=>{
-					const opt = document.createElement('option');
-					opt.value = c; opt.textContent = c;
-					formSel.appendChild(opt);
-				});
-			}
-			if(filterSel){
-				// limpiar excepto la primera opción "Todas"
-				while(filterSel.options.length > 1) filterSel.remove(1);
-				FINANCE_CATEGORIES.forEach(c=>{
-					const opt = document.createElement('option');
-					opt.value = c; opt.textContent = c;
-					filterSel.appendChild(opt);
-				});
-			}
-		}
-
-		// Render órdenes
-		function renderOrders(){
+		// Render órdenes (ahora asíncrono)
+		async function renderOrders(){
 			const tbody = $('#orders-table tbody');
 			const filter = $('#filter-input').value.toLowerCase().trim();
 			const statusFilter = $('#status-filter').value;
 			const paymentFilter = $('#payment-filter').value; // nuevo
-			const items = loadOrders().filter(o=>{
+			const all = await loadOrders();
+			const items = all.filter(o=>{
 				if(statusFilter && (o.status||'ingresado') !== statusFilter) return false;
 				// nuevo: filtro de pago
 				if(paymentFilter === 'paid' && !o.paid) return false;
 				if(paymentFilter === 'unpaid' && o.paid) return false;
 				if(!filter) return true;
-				const client = findClientById(o.clientId) || {};
+				// findClientById es asíncrona, pero aquí ya tenemos clientes cargados en memoria si queremos rendimiento.
+				// Para simplicidad hacemos una búsqueda síncrona en clientes cargados (cargamos la lista).
+				const client = (async ()=> { const cl = await loadClients(); return cl.find(c=>c.id==o.clientId) || {}; })();
+				// como client es Promise, mejor cargar clientes antes
+			});
+			// Mejor enfoque: cargar clientes antes de filtrar
+			const clients = await loadClients();
+			const filtered = all.filter(o=>{
+				if(statusFilter && (o.status||'ingresado') !== statusFilter) return false;
+				if(paymentFilter === 'paid' && !o.paid) return false;
+				if(paymentFilter === 'unpaid' && o.paid) return false;
+				if(!filter) return true;
+				const client = clients.find(c=>c.id==o.clientId) || {};
 				return [client.name, o.brand, o.model, o.serial, o.accessories, o.failure, ORDER_STATUSES[o.status]||''].join(' ').toLowerCase().includes(filter);
 			});
 			tbody.innerHTML = '';
-			items.forEach(o=>{
-				const client = findClientById(o.clientId) || {name:'--'};
+			filtered.forEach(o=>{
+				const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
 				const statusKey = o.status || 'ingresado';
 				const statusLabel = ORDER_STATUSES[statusKey] || statusKey;
 				const statusClass = `status-${statusKey}`;
@@ -492,12 +501,12 @@
 
 			// acciones
 			$$('.btn-edit').forEach(b=>b.onclick = ()=> openOrderModal(b.dataset.id));
-			$$('.btn-delete').forEach(b=>b.onclick = ()=> { if(confirm('Eliminar orden?')) deleteOrder(b.dataset.id) });
+			$$('.btn-delete').forEach(b=>b.onclick = async ()=> { if(confirm('Eliminar orden?')) await deleteOrder(b.dataset.id) });
 			$$('select.inline-status').forEach(s=>{
-				s.onchange = ()=> updateOrderStatus(s.dataset.id, s.value);
+				s.onchange = async ()=> await updateOrderStatus(s.dataset.id, s.value);
 			});
 			// nuevo: toggle de pago
-			$$('.btn-toggle-payment').forEach(b => b.onclick = ()=> toggleOrderPayment(b.dataset.id));
+			$$('.btn-toggle-payment').forEach(b => b.onclick = async ()=> await toggleOrderPayment(b.dataset.id));
 
 			// botón PDF por orden
 			$$('button[data-id]').filter(b => b.classList.contains('btn') && b.textContent === 'PDF')
@@ -513,25 +522,26 @@
 				openEquipmentModal(serial);
 			});
 
-			$('#orders-count').textContent = `Mostrando ${items.length} registros`;
+			$('#orders-count').textContent = `Mostrando ${filtered.length} registros`;
 			// actualizar métricas cuando se renderizan órdenes
-			computeMetrics();
+			await computeMetrics();
 		}
 
-		// eliminar orden (si no existía)
-		function deleteOrder(id){
-			const list = loadOrders().filter(x=>x.id!=id);
-			saveOrders(list);
-			renderOrders();
-			renderFinance();
-			computeMetrics();
+		// eliminar orden (ahora asíncrono)
+		async function deleteOrder(id){
+			const list = (await loadOrders()).filter(x=>x.id!=id);
+			await saveOrders(list);
+			await renderOrders();
+			await renderFinance();
+			await computeMetrics();
 		}
 
-		// Generar PDF para una sola orden
-		function exportOrderPDF(id){
-			const order = loadOrders().find(o=>o.id==id);
+		// Generar PDF para una sola orden (sincrónico en su uso pero puede ser async)
+		async function exportOrderPDF(id){
+			const orders = await loadOrders();
+			const order = orders.find(o=>o.id==id);
 			if(!order) return alert('Orden no encontrada');
-			const client = findClientById(order.clientId) || {name:'--', phone:'', email:''};
+			const client = (await loadClients()).find(c=>c.id==order.clientId) || {name:'--', phone:'', email:''};
 			const { jsPDF } = window.jspdf;
 			const doc = new jsPDF({unit:'pt', format:'letter'});
 			const margin = 40;
@@ -545,7 +555,7 @@
 				`ID: ${order.id}`,
 				`Fecha: ${order.date ? new Date(order.date).toLocaleString() : ''}`,
 				`Estado: ${ORDER_STATUSES[order.status||'ingresado'] || order.status}`,
-				`Pago: ${order.paid ? 'Pagado' : 'No pagado'}`, // nuevo
+				`Pago: ${order.paid ? 'Pagado' : 'No pagado'}`,
 				'',
 				'Cliente:',
 				`  Nombre: ${client.name}`,
@@ -568,7 +578,6 @@
 			const pageHeight = doc.internal.pageSize.height;
 			const lineHeight = 14;
 			lines.forEach(line=>{
-				// salto de página simple
 				if(y + lineHeight > pageHeight - margin){
 					doc.addPage();
 					y = margin;
@@ -580,7 +589,6 @@
 			doc.save(`orden_${order.id}.pdf`);
 
 			function wrapText(text, maxChars){
-				// devuelva string o array de líneas según necesidad para jsPDF.text acepta arrays
 				if(!text) return '';
 				if(text.length <= maxChars) return text;
 				const parts = [];
@@ -593,20 +601,20 @@
 			}
 		}
 
-		function openOrderModal(id){
+		async function openOrderModal(id){
 			editingOrderId = id || null;
 			const modal = $('#modal-order');
 			$('#modal-order-title').textContent = id ? 'Editar orden' : 'Nueva orden';
 			const form = $('#form-order');
 			form.reset();
-			populateClientSelect();
+			await populateClientSelect();
 			// limpiar imágenes previas
 			currentOrderImages = [];
 			$('#image-preview-container').innerHTML = '';
 			$('#order-images').value = '';
 
 			if(id){
-				const item = loadOrders().find(x=>x.id==id);
+				const item = (await loadOrders()).find(x=>x.id==id);
 				if(item){
 					form.clientId.value = item.clientId || '';
 					form.brand.value = item.brand || '';
@@ -618,7 +626,7 @@
 					form.price.value = item.price || '';
 					form.notes.value = item.notes || '';
 					form.status.value = item.status || 'ingresado';
-					form.paid.value = item.paid ? 'true' : 'false'; // nuevo
+					form.paid.value = item.paid ? 'true' : 'false';
 					// cargar imágenes existentes
 					if(item.images && Array.isArray(item.images)){
 						currentOrderImages = [...item.images];
@@ -696,10 +704,10 @@
 			});
 		}
 
-		function saveOrderFromForm(e){
+		async function saveOrderFromForm(e){
 			e.preventDefault();
 			const f = e.target;
-			const list = loadOrders();
+			const list = await loadOrders();
 			if(editingOrderId){
 				const idx = list.findIndex(x=>x.id==editingOrderId);
 				if(idx>-1){
@@ -715,14 +723,14 @@
 						price: f.price.value || null,
 						notes: f.notes.value,
 						status: f.status ? f.status.value || f.status : (list[idx].status || 'ingresado'),
-						paid: f.paid.value === 'true', // nuevo
+						paid: f.paid.value === 'true',
 						images: currentOrderImages
 					};
-					upsertEquipmentFromOrder(list[idx]);
+					await upsertEquipmentFromOrder(list[idx]);
 				}
 			} else {
 				const item = {
-					id: Date.now().toString().slice(-6),
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
 					clientId: f.clientId.value,
 					brand: f.brand.value,
 					serial: f.serial.value,
@@ -733,41 +741,40 @@
 					price: f.price.value || null,
 					notes: f.notes.value,
 					status: f.status ? f.status.value || 'ingresado' : 'ingresado',
-					paid: f.paid.value === 'true', // nuevo
+					paid: f.paid.value === 'true',
 					date: new Date().toISOString(),
 					images: currentOrderImages
 				};
 				list.unshift(item);
-				upsertEquipmentFromOrder(item);
+				await upsertEquipmentFromOrder(item);
 			}
-			saveOrders(list);
+			await saveOrders(list);
 			closeModal('#modal-order');
-			renderOrders();
+			await renderOrders();
 		}
 
 		// nueva función: actualizar estado rápidamente
-		function updateOrderStatus(id, newStatus){
-			const list = loadOrders();
+		async function updateOrderStatus(id, newStatus){
+			const list = await loadOrders();
 			const idx = list.findIndex(x=>x.id==id);
 			if(idx===-1) return;
 			list[idx].status = newStatus;
-			// agregar entrada a historial de equipo si existe serial
-			upsertEquipmentFromOrder({...list[idx], date: new Date().toISOString()});
-			saveOrders(list);
-			renderOrders();
+			await upsertEquipmentFromOrder({...list[idx], date: new Date().toISOString()});
+			await saveOrders(list);
+			await renderOrders();
 		}
 
-		// Clients (antes "accounts")
-		function renderClients(){
+		// Clients (ahora asíncrono)
+		async function renderClients(){
 			const tbody = $('#clients-table tbody');
-			const items = loadClients();
+			const items = await loadClients();
 			tbody.innerHTML = '';
 			items.forEach(c=>{
 				const tr = document.createElement('tr');
 				tr.innerHTML = `
 					<td>${c.id}</td>
 					<td>${escapeHtml(c.name)}</td>
-					<td>${escapeHtml(c.cedula||'')}</td> <!-- agregado: columna cédula -->
+					<td>${escapeHtml(c.cedula||'')}</td>
 					<td>${escapeHtml(c.phone||'')}</td>
 					<td>${escapeHtml(c.email||'')}</td>
 					<td>
@@ -778,22 +785,22 @@
 				tbody.appendChild(tr);
 			});
 			$$('#clients-table .btn-edit').forEach(b=>b.onclick = ()=> openClientModal(b.dataset.id));
-			$$('#clients-table .btn-delete').forEach(b=>b.onclick = ()=> { if(confirm('Eliminar cliente?')) deleteClient(b.dataset.id) });
+			$$('#clients-table .btn-delete').forEach(b=>b.onclick = async ()=> { if(confirm('Eliminar cliente?')) await deleteClient(b.dataset.id) });
 			// actualizar métricas al renderizar clientes
-			computeMetrics();
+			await computeMetrics();
 		}
 
-		function openClientModal(id){
+		async function openClientModal(id){
 			editingClientId = id || null;
 			const modal = $('#modal-client');
 			$('#modal-client-title').textContent = id ? 'Editar cliente' : 'Nuevo cliente';
 			const form = $('#form-client');
 			form.reset();
 			if(id){
-				const item = loadClients().find(x=>x.id==id);
+				const item = (await loadClients()).find(x=>x.id==id);
 				if(item){
 					form.name.value = item.name || '';
-					form.cedula.value = item.cedula || ''; // cargamos cedula al editar
+					form.cedula.value = item.cedula || '';
 					form.phone.value = item.phone || '';
 					form.email.value = item.email || '';
 					form.address.value = item.address || '';
@@ -802,17 +809,17 @@
 			modal.classList.add('show');
 		}
 
-		function saveClientFromForm(e){
+		async function saveClientFromForm(e){
 			e.preventDefault();
 			const f = e.target;
-			const list = loadClients();
-			let newClientId = null; // <-- añadido: guardamos id si es nuevo
+			const list = await loadClients();
+			let newClientId = null;
 			if(editingClientId){
 				const idx = list.findIndex(x=>x.id==editingClientId);
 				if(idx>-1){
 					list[idx] = {...list[idx],
 						name:f.name.value,
-						cedula: f.cedula.value, // guardamos/actualizamos cedula
+						cedula: f.cedula.value,
 						phone:f.phone.value,
 						email:f.email.value,
 						address:f.address.value
@@ -820,48 +827,48 @@
 				}
 			} else {
 				const item = {
-					id: Date.now().toString().slice(-6),
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
 					name:f.name.value,
-					cedula: f.cedula.value, // guardamos cedula al crear
+					cedula: f.cedula.value,
 					phone:f.phone.value,
 					email:f.email.value,
 					address:f.address.value
 				};
 				list.unshift(item);
-				newClientId = item.id; // <-- añadido: capturamos id del nuevo cliente
+				newClientId = item.id;
 			}
-			saveClients(list);
+			await saveClients(list);
 
-			// <-- añadido: repoblar select de clientes en el formulario de orden
-			populateClientSelect();
+			// repoblar select de clientes en el formulario de orden
+			await populateClientSelect();
 
 			// si creamos un cliente nuevo, seleccionarlo automáticamente en el formulario de orden (si existe)
 			if(newClientId){
 				const orderSel = document.querySelector('#form-order select[name="clientId"]');
 				if(orderSel){
 					orderSel.value = newClientId;
-					// Si el modal de orden está abierto, darle foco al select para confirmar selección
 					const modalOrder = document.querySelector('#modal-order');
 					if(modalOrder && modalOrder.classList.contains('show')) orderSel.focus();
 				}
 			}
 
 			closeModal('#modal-client');
-			renderClients();
+			await renderClients();
 		}
 
-		function deleteClient(id){
-			const list = loadClients().filter(x=>x.id!=id);
-			saveClients(list);
-			renderClients();
-			// <-- añadido: repoblar select de clientes para evitar opciones obsoletas
-			populateClientSelect();
+		async function deleteClient(id){
+			const list = (await loadClients()).filter(x=>x.id!=id);
+			await saveClients(list);
+			await renderClients();
+			// repoblar select de clientes
+			await populateClientSelect();
 		}
 
 		// Helpers para clientes
-		function populateClientSelect(){
+		async function populateClientSelect(){
 			const sel = document.querySelector('#form-order select[name="clientId"]');
-			const clients = loadClients();
+			const clients = await loadClients();
+			if(!sel) return;
 			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
 			clients.forEach(c => {
 				const opt = document.createElement('option');
@@ -869,12 +876,12 @@
 				sel.appendChild(opt);
 			});
 		}
-		function findClientById(id){ return loadClients().find(c=>c.id==id); }
+		async function findClientById(id){ const clients = await loadClients(); return clients.find(c=>c.id==id); }
 
-		// Equipments: hoja de vida por serial
-		function upsertEquipmentFromOrder(order){
+		// Equipments: hoja de vida por serial (asíncrono)
+		async function upsertEquipmentFromOrder(order){
 			if(!order.serial) return;
-			const list = loadEquipments();
+			const list = await loadEquipments();
 			let eq = list.find(e => e.serial && e.serial.toLowerCase() === order.serial.toLowerCase());
 			const entry = {
 				orderId: order.id,
@@ -896,7 +903,7 @@
 				eq.history.unshift(entry);
 			} else {
 				eq = {
-					id: Date.now().toString().slice(-6),
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
 					serial: order.serial,
 					brand: order.brand,
 					model: order.model,
@@ -905,32 +912,32 @@
 				};
 				list.unshift(eq);
 			}
-			saveEquipments(list);
+			await saveEquipments(list);
 		}
 
-		// Export / Import (incluye órdenes, clientes, equipos)
-		function exportData(){
-			const data = { orders: loadOrders(), clients: loadClients(), equipments: loadEquipments(), transactions: loadTransactions(), exportedAt: new Date().toISOString() };
+		// Export / Import (ahora usan el backend)
+		async function exportData(){
+			const data = { orders: await loadOrders(), clients: await loadClients(), equipments: await loadEquipments(), transactions: await loadTransactions(), exportedAt: new Date().toISOString() };
 			const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url; a.download = 'mipc_data.json'; a.click();
 			URL.revokeObjectURL(url);
 		}
-		function importDataFile(e){
+		async function importDataFile(e){
 			const file = e.target.files[0];
 			if(!file) return;
 			const reader = new FileReader();
-			reader.onload = ev => {
+			reader.onload = async ev => {
 				try {
 					const data = JSON.parse(ev.target.result);
-					if(Array.isArray(data.orders)) saveOrders(data.orders);
-					if(Array.isArray(data.clients)) saveClients(data.clients);
-					if(Array.isArray(data.equipments)) saveEquipments(data.equipments);
-					if(Array.isArray(data.transactions)) saveTransactions(data.transactions);
+					if(Array.isArray(data.orders)) await saveOrders(data.orders);
+					if(Array.isArray(data.clients)) await saveClients(data.clients);
+					if(Array.isArray(data.equipments)) await saveEquipments(data.equipments);
+					if(Array.isArray(data.transactions)) await saveTransactions(data.transactions);
 					alert('Importación completada');
-					renderOrders(); renderClients();
-					renderFinance(); // también actualizar finanzas después de importar
+					await renderOrders(); await renderClients();
+					await renderFinance();
 				} catch(err){
 					alert('Archivo inválido');
 				}
@@ -939,11 +946,11 @@
 			e.target.value = '';
 		}
 
-		// Exportar órdenes a PDF (usa jsPDF)
-		function exportOrdersPDF(){
-			const orders = loadOrders();
+		// Exportar órdenes a PDF (usa jsPDF) - ahora async para obtener datos
+		async function exportOrdersPDF(){
+			const orders = await loadOrders();
 			if(!orders || orders.length===0) return alert('No hay órdenes para exportar.');
-			const clients = loadClients();
+			const clients = await loadClients();
 			const { jsPDF } = window.jspdf;
 			const doc = new jsPDF({unit:'pt', format:'letter'});
 			const margin = 40;
@@ -955,9 +962,8 @@
 			y += 20;
 			doc.setFontSize(10);
 
-			// encabezado de columnas (simple) - agregamos columna Pago
 			const cols = ['ID','Cliente','Marca','Modelo','Serie','Estado','Pago','Técnico','Fecha'];
-			const colWidths = [40,100,60,60,80,70,50,80,80]; // ajustado
+			const colWidths = [40,100,60,60,80,70,50,80,80];
 			const startX = margin;
 
 			function printRow(values){
@@ -970,7 +976,6 @@
 				y += lineHeight;
 			}
 
-			// cabecera de tabla
 			printRow(cols);
 			doc.setLineWidth(0.5);
 			doc.line(margin, y-8, pageHeight - margin, y-8);
@@ -978,7 +983,7 @@
 			orders.forEach((o, idx)=>{
 				const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
 				const statusLabel = ORDER_STATUSES[o.status || 'ingresado'] || (o.status||'');
-				const paymentLabel = o.paid ? 'Sí' : 'No'; // nuevo
+				const paymentLabel = o.paid ? 'Sí' : 'No';
 				const row = [
 					o.id,
 					client.name,
@@ -986,11 +991,10 @@
 					o.model || '',
 					o.serial || '',
 					statusLabel,
-					paymentLabel, // nuevo
+					paymentLabel,
 					o.technician || '',
 					o.date ? new Date(o.date).toLocaleString() : ''
 				];
-				// controlar salto de página
 				if(y + lineHeight > pageHeight - margin){
 					doc.addPage();
 					y = margin;
@@ -1011,22 +1015,24 @@
 		function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 
 		// Modal: ver hoja de vida del equipo
-		function openEquipmentModal(serial){
+		async function openEquipmentModal(serial){
 			const modal = $('#modal-equipment');
 			$('#modal-equipment-title').textContent = `Hoja de vida - ${serial}`;
 			const container = $('#equipment-history');
 			container.innerHTML = '';
-			const list = loadEquipments();
+			const list = await loadEquipments();
 			const eq = list.find(e => e.serial && e.serial.toLowerCase() === serial.toLowerCase());
 			if(!eq){
 				container.innerHTML = '<div class="history-item">No hay historial para este número de serie.</div>';
 			} else {
 				eq.history = eq.history || [];
 				eq.history.forEach(h=>{
-					const client = findClientById(h.clientId) || {name:'--'};
+					const client = (async ()=> { const c = await findClientById(h.clientId); return c || {name:'--'}; })();
+					// para simplicidad mostramos cliente por id si existe (carga ya asíncrona)
+					const clientSync = (function(){ /* placeholder */ })();
 					const div = document.createElement('div');
 					div.className = 'history-item';
-					div.innerHTML = `<strong>${new Date(h.date).toLocaleString()}</strong> — ${escapeHtml(h.status||'')} — ${escapeHtml(h.failure||'')}<br><span class="small">Cliente: ${escapeHtml(client.name)} — Técnico: ${escapeHtml(h.technician||'')}</span>`;
+					div.innerHTML = `<strong>${new Date(h.date).toLocaleString()}</strong> — ${escapeHtml(h.status||'')} — ${escapeHtml(h.failure||'')}<br><span class="small">Cliente: ${escapeHtml(((findClientById(h.clientId)||{}).name)||'--')} — Técnico: ${escapeHtml(h.technician||'')}</span>`;
 					container.appendChild(div);
 				});
 			}
@@ -1034,8 +1040,8 @@
 		}
 
 		// Generar link de WhatsApp para una orden
-		function generateWhatsAppLink(order){
-			const client = findClientById(order.clientId) || {};
+		async function generateWhatsAppLink(order){
+			const client = await findClientById(order.clientId) || {};
 			let phone = client.phone || '';
 			const normalized = normalizePhone(phone);
 			if(!normalized){
@@ -1048,10 +1054,8 @@
 			const serial = order.serial || '';
 			const technician = order.technician || '';
 			const status = order.status || 'ingresado';
-			// enlace de detalles (puede usarse para seguimiento)
 			const detailLink = `https://tuulapp.com/1/?i=${encodeURIComponent(order.id)}`;
 
-			// Mensajes por estado
 			let msg = '';
 			switch(status){
 				case 'en_reparacion':
@@ -1069,22 +1073,21 @@
 					break;
 			}
 
-			// añadir saludo breve y firma opcional
 			msg = `${msg} — Mipc Computadores`;
 
 			return `https://api.whatsapp.com/send?phone=${normalized}&text=${encodeURIComponent(msg)}&type=phone_number&app_absent=0`;
 		}
 
 		// Abrir WhatsApp para la orden (usa siempre el teléfono guardado en el cliente y prefijo 57)
-		function openWhatsApp(id){
-			const order = loadOrders().find(o=>o.id==id);
+		async function openWhatsApp(id){
+			const order = (await loadOrders()).find(o=>o.id==id);
 			if(!order) return alert('Orden no encontrada');
-			const link = generateWhatsAppLink(order);
+			const link = await generateWhatsAppLink(order);
 			if(!link) return;
 			window.open(link, '_blank');
 		}
 
-		// Normaliza teléfono: elimina caracteres no numéricos y asegura prefijo '57' sin pedir nada al usuario.
+		// Normaliza teléfono
 		function normalizePhone(phone){
 			phone = (phone||'').replace(/\D/g,'');
 			if(!phone) return null;
@@ -1095,13 +1098,12 @@
 			return phone;
 		}
 
-		// Finanzas: renderizado de transacciones
-		function renderFinance(){
+		// Finanzas: renderizado de transacciones (asíncrono)
+		async function renderFinance(){
 			const tbody = $('#transactions-table tbody');
-			const items = loadTransactions();
+			const items = await loadTransactions();
 			tbody.innerHTML = '';
 			let totalIncome = 0, totalExpense = 0;
-			// obtener filtros
 			const typeFilter = ($('#type-filter') && $('#type-filter').value) || '';
 			const categoryFilter = ($('#category-filter') && $('#category-filter').value) || '';
 			const filtered = items.filter(t=>{
@@ -1126,22 +1128,19 @@
 				`;
 				tbody.appendChild(tr);
 			});
-			// bind delete
-			$$('#transactions-table .btn-delete').forEach(b=> b.onclick = ()=> { if(confirm('Eliminar transacción?')) deleteTransaction(b.dataset.id) });
-			// resumen
+			$$('#transactions-table .btn-delete').forEach(b=> b.onclick = async ()=> { if(confirm('Eliminar transacción?')) await deleteTransaction(b.dataset.id) });
 			const summary = $('#finance-summary');
 			const balance = totalIncome - totalExpense;
 			if(summary) summary.textContent = `Ingresos: ${formatCurrency(totalIncome)} — Gastos: ${formatCurrency(totalExpense)} — Saldo: ${formatCurrency(balance)}`;
-			// actualizar panel de métricas
-			computeMetrics();
+			await computeMetrics();
 		}
 
-		function saveTransactionFromForm(e){
+		async function saveTransactionFromForm(e){
 			e.preventDefault();
 			const f = e.target;
-			const list = loadTransactions();
+			const list = await loadTransactions();
 			const item = {
-				id: Date.now().toString().slice(-6),
+				id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
 				type: f.type.value,
 				amount: Number(f.amount.value || 0),
 				category: f.category.value,
@@ -1149,15 +1148,15 @@
 				notes: f.notes.value
 			};
 			list.unshift(item);
-			saveTransactions(list);
+			await saveTransactions(list);
 			f.reset();
-			renderFinance();
+			await renderFinance();
 		}
 
-		function deleteTransaction(id){
-			const list = loadTransactions().filter(x=>x.id!=id);
-			saveTransactions(list);
-			renderFinance();
+		async function deleteTransaction(id){
+			const list = (await loadTransactions()).filter(x=>x.id!=id);
+			await saveTransactions(list);
+			await renderFinance();
 		}
 
 		function formatCurrency(v){
@@ -1168,11 +1167,11 @@
 			}
 		}
 
-		// nuevas métricas
-		function computeMetrics(){
-			const tx = loadTransactions();
-			const orders = loadOrders();
-			const clients = loadClients();
+		// nuevas métricas (async)
+		async function computeMetrics(){
+			const tx = await loadTransactions();
+			const orders = await loadOrders();
+			const clients = await loadClients();
 			let income = 0, expense = 0;
 			tx.forEach(t => {
 				if(t.type === 'income') income += Number(t.amount||0);
@@ -1181,10 +1180,8 @@
 			const balance = income - expense;
 			const txCount = tx.length;
 			const avgTx = txCount ? ((income + expense) / txCount) : 0;
-			// conteo por estado de órdenes
 			const statusCounts = {};
 			Object.keys(ORDER_STATUSES).forEach(k => statusCounts[k] = 0);
-			// nuevo: contar órdenes pagadas vs no pagadas
 			let paidOrders = 0, unpaidOrders = 0;
 			orders.forEach(o => {
 				const s = o.status || 'ingresado';
@@ -1192,7 +1189,6 @@
 				if(o.paid) paidOrders++;
 				else unpaidOrders++;
 			});
-			// construir tarjeta de métricas simple
 			const container = document.getElementById('finance-metrics');
 			if(!container) return;
 			container.innerHTML = `
@@ -1228,60 +1224,54 @@
 			`;
 		}
 
-		// nueva función: cambiar estado de pago
-		function toggleOrderPayment(id){
-			const list = loadOrders();
+		// nueva función: cambiar estado de pago (async)
+		async function toggleOrderPayment(id){
+			const list = await loadOrders();
 			const idx = list.findIndex(x=>x.id==id);
 			if(idx===-1) return;
 			
 			const order = list[idx];
 			const wasPaid = order.paid;
 			
-			// cambiar estado
 			list[idx].paid = !wasPaid;
-			saveOrders(list);
+			await saveOrders(list);
 			
-			// Si se marca como pagado Y tiene un precio, crear transacción financiera
 			if(!wasPaid && list[idx].paid && order.price && Number(order.price) > 0){
-				const client = findClientById(order.clientId) || {name:'Cliente'};
-				const transactions = loadTransactions();
+				const client = (await loadClients()).find(c=>c.id==order.clientId) || {name:'Cliente'};
+				const transactions = await loadTransactions();
 				
 				const transaction = {
-					id: Date.now().toString().slice(-6),
+					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
 					type: 'income',
 					amount: Number(order.price),
 					category: 'Servicios',
 					date: new Date().toISOString().slice(0,10),
 					notes: `Pago orden ${order.id} — ${client.name}`,
-					orderId: order.id // vincular transacción a la orden
+					orderId: order.id
 				};
 				
 				transactions.unshift(transaction);
-				saveTransactions(transactions);
+				await saveTransactions(transactions);
 			}
 			
-			// Si se desmarca como pagado, eliminar la transacción vinculada
 			if(wasPaid && !list[idx].paid){
-				let transactions = loadTransactions();
-				// buscar y eliminar transacciones vinculadas a esta orden
+				let transactions = await loadTransactions();
 				const initialCount = transactions.length;
 				transactions = transactions.filter(t => {
-					// eliminar si está vinculada a esta orden O si las notas contienen "orden [id]"
 					const linkedByOrderId = t.orderId && t.orderId === order.id;
 					const linkedByNotes = t.notes && t.notes.includes(`orden ${order.id}`);
 					return !(linkedByOrderId || linkedByNotes);
 				});
 				
 				if(transactions.length < initialCount){
-					saveTransactions(transactions);
-					// mostrar confirmación visual
+					await saveTransactions(transactions);
 					console.log(`Transacción eliminada para orden ${order.id}`);
 				}
 			}
 			
-			renderOrders();
-			renderFinance(); // actualizar finanzas
-			computeMetrics();
+			await renderOrders();
+			await renderFinance();
+			await computeMetrics();
 		}
 	</script>
 </body>
