@@ -332,6 +332,33 @@
 		// Categorías predefinidas para Finanzas
 		const FINANCE_CATEGORIES = ['Servicios','Repuestos','Ventas','Nomina','Otros'];
 
+		// pobla los selects de categoría (#category-filter y #tx-category)
+		async function populateFinanceCategorySelects(){
+			const catSet = new Set(FINANCE_CATEGORIES);
+			try {
+				const tx = await loadTransactions();
+				(tx || []).forEach(t => { if(t && t.category) catSet.add(t.category); });
+			} catch(e){
+				console.warn('No se pudieron leer transacciones para categorías', e);
+			}
+
+			const list = Array.from(catSet);
+			const catFilter = $('#category-filter');
+			const txCat = $('#tx-category');
+			if(catFilter){
+				const selOld = catFilter.value || '';
+				catFilter.innerHTML = '<option value="">Todas las categorías</option>';
+				list.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catFilter.appendChild(o); });
+				if(selOld) catFilter.value = selOld;
+			}
+			if(txCat){
+				const selOld2 = txCat.value || '';
+				txCat.innerHTML = '';
+				list.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; txCat.appendChild(o); });
+				if(selOld2) txCat.value = selOld2;
+			}
+		}
+
 		// nuevos: estados válidos (clave -> etiqueta)
 		const ORDER_STATUSES = {
 			ingresado: 'Ingresado',
@@ -354,7 +381,7 @@
 			renderView('orders');
 			await renderOrders();
 			await renderClients();
-			populateFinanceCategorySelects(); // rellenar selects de categoría
+			await populateFinanceCategorySelects(); // rellenar selects de categoría
 			await renderFinance(); // inicializar finanzas (después de poblar categorías)
 		});
 
@@ -937,6 +964,7 @@
 					if(Array.isArray(data.transactions)) await saveTransactions(data.transactions);
 					alert('Importación completada');
 					await renderOrders(); await renderClients();
+					await populateFinanceCategorySelects();
 					await renderFinance();
 				} catch(err){
 					alert('Archivo inválido');
@@ -1149,6 +1177,8 @@
 			};
 			list.unshift(item);
 			await saveTransactions(list);
+			// actualizar selects en caso de nueva categoría
+			await populateFinanceCategorySelects();
 			f.reset();
 			await renderFinance();
 		}
@@ -1156,6 +1186,8 @@
 		async function deleteTransaction(id){
 			const list = (await loadTransactions()).filter(x=>x.id!=id);
 			await saveTransactions(list);
+			// actualizar selects despues de eliminar
+			await populateFinanceCategorySelects();
 			await renderFinance();
 		}
 
@@ -1275,6 +1307,4 @@
 		}
 	</script>
 </body>
-
 </html>
-
