@@ -1553,6 +1553,28 @@
 				alert('Enlace copiado al portapapeles:\n' + link);
 			}
 		}
+
+		// Abrir WhatsApp para la orden (usa siempre el teléfono guardado en el cliente y prefijo 57)
+		async function openWhatsApp(id){
+			const orders = await loadOrders();
+			const order = orders.find(o=>o.id==id);
+			if(!order) return alert('Orden no encontrada');
+			
+			// generar token si no existe
+			if(!order.accessToken){
+				order.accessToken = generateAccessToken();
+				// actualizar la orden en la lista y guardar
+				const idx = orders.findIndex(x=>x.id==id);
+				if(idx>-1){
+					orders[idx] = order;
+					await saveOrders(orders);
+				}
+			}
+			
+			const link = await generateWhatsAppLink(order);
+			if(!link) return;
+			window.open(link, '_blank');
+		}
 	</script>
 </body>
 </html>
