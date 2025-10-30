@@ -293,7 +293,7 @@
 
 	<script>
 		// NUEVO: URL del API
-		const API_URL = "https://uncertainty-air-portion-media.trycloudflare.com/api";
+		const API_URL = "https://rides-prefer-seal-becomes.trycloudflare.com/api";
 
 		// funciones reutilizables para comunicarse con el backend
 		async function loadTable(table) {
@@ -989,6 +989,12 @@
 			const list = await loadOrders();
 			const idx = list.findIndex(x=>x.id==id);
 			if(idx===-1) return;
+			
+			// Asegurar que la orden tiene token antes de actualizar
+			if(!list[idx].accessToken){
+				list[idx].accessToken = generateAccessToken();
+			}
+			
 			list[idx].status = newStatus;
 			await upsertEquipmentFromOrder({...list[idx], date: new Date().toISOString()});
 			await saveOrders(list);
@@ -1288,6 +1294,11 @@
 			const serial = order.serial || '';
 			const technician = order.technician || '';
 			const status = order.status || 'ingresado';
+			
+			// Asegurar que la orden tiene token antes de generar el enlace
+			if(!order.accessToken){
+				order.accessToken = generateAccessToken();
+			}
 			const publicLink = getPublicOrderLink(order);
 
 			let msg = '';
@@ -1556,24 +1567,29 @@
 
 		// Abrir WhatsApp para la orden (usa siempre el teléfono guardado en el cliente y prefijo 57)
 		async function openWhatsApp(id){
-			const orders = await loadOrders();
-			const order = orders.find(o=>o.id==id);
-			if(!order) return alert('Orden no encontrada');
-			
-			// generar token si no existe
-			if(!order.accessToken){
-				order.accessToken = generateAccessToken();
-				// actualizar la orden en la lista y guardar
-				const idx = orders.findIndex(x=>x.id==id);
-				if(idx>-1){
-					orders[idx] = order;
-					await saveOrders(orders);
+			try {
+				const orders = await loadOrders();
+				const order = orders.find(o=>o.id==id);
+				if(!order) return alert('Orden no encontrada');
+				
+				// generar token si no existe
+				if(!order.accessToken){
+					order.accessToken = generateAccessToken();
+					// actualizar la orden en la lista y guardar
+					const idx = orders.findIndex(x=>x.id==id);
+					if(idx>-1){
+						orders[idx] = order;
+						await saveOrders(orders);
+					}
 				}
+				
+				const link = await generateWhatsAppLink(order);
+				if(!link) return;
+				window.open(link, '_blank');
+			} catch(error) {
+				console.error('Error en openWhatsApp:', error);
+				alert('Error al generar el enlace de WhatsApp. Por favor, inténtalo de nuevo.');
 			}
-			
-			const link = await generateWhatsAppLink(order);
-			if(!link) return;
-			window.open(link, '_blank');
 		}
 	</script>
 </body>
