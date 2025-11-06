@@ -157,12 +157,109 @@
 		.badge-status-paid { background:#7af0a5; color:#07121a; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:600 }
 		.badge-status-unpaid { background:#ff5b6b; color:#fff; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:600 }
 		.badge-status-partial { background:#ffcc33; color:#07121a; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:600 }
+
+		/* NUEVO: estilos para login */
+		#login-screen {
+			position: fixed;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: linear-gradient(135deg, #0a1420, #051015);
+			z-index: 9999;
+		}
+		#login-screen.hidden { display: none; }
+		.login-container {
+			background: linear-gradient(180deg, #071722, #06121a);
+			padding: 40px;
+			border-radius: 12px;
+			box-shadow: 0 8px 32px rgba(0,0,0,.6);
+			width: 100%;
+			max-width: 380px;
+			border: 1px solid rgba(255,255,255,.05);
+		}
+		.login-logo {
+			text-align: center;
+			margin-bottom: 30px;
+		}
+		.login-logo h1 {
+			color: var(--accent);
+			font-size: 28px;
+			margin: 0;
+			font-weight: 700;
+		}
+		.login-logo p {
+			color: var(--muted);
+			font-size: 14px;
+			margin: 8px 0 0 0;
+		}
+		.login-form {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+		.login-form input {
+			padding: 12px 16px;
+			border-radius: 8px;
+			border: 1px solid rgba(255,255,255,.08);
+			background: #051417;
+			color: #eaf6f3;
+			font-size: 14px;
+			transition: border-color .2s;
+		}
+		.login-form input:focus {
+			outline: none;
+			border-color: var(--accent);
+		}
+		.login-form button {
+			background: var(--accent);
+			color: #07121a;
+			border: 0;
+			padding: 12px;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: 600;
+			transition: transform .2s;
+		}
+		.login-form button:hover {
+			transform: translateY(-2px);
+		}
+		.login-form button:active {
+			transform: translateY(0);
+		}
+		.login-error {
+			color: #ff5b6b;
+			font-size: 13px;
+			text-align: center;
+			display: none;
+		}
+		.login-error.show {
+			display: block;
+		}
 	</style>
 </head>
 <body>
+	<!-- NUEVO: pantalla de login -->
+	<div id="login-screen">
+		<div class="login-container">
+			<div class="login-logo">
+				<h1>🔧 MIPC</h1>
+				<p>Sistema de Gestión</p>
+			</div>
+			<form class="login-form" id="login-form">
+				<input type="text" id="login-username" placeholder="Usuario" autocomplete="username" required>
+				<input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required>
+				<div class="login-error" id="login-error">Usuario o contraseña incorrectos</div>
+				<button type="submit">Iniciar Sesión</button>
+			</form>
+		</div>
+	</div>
+
 	<div class="app">
 		<aside class="sidebar card">
 			<div class="brand">Mipc Computadores</div>
+			<div id="user-info" class="small" style="color:var(--accent);margin-bottom:15px;padding:8px;background:rgba(199,255,0,.05);border-radius:6px;text-align:center"></div>
 			<ul class="menu">
 				<li class="active" data-view="orders">Órdenes</li>
 				<li data-view="clients">Clientes</li>
@@ -172,6 +269,7 @@
 				<li data-view="settings">Configuración</li>
 			</ul>
 			<div style="margin-top:20px" class="small">Puedes exportar/importar desde Configuración.</div>
+			<button id="btn-logout" style="margin-top:20px;width:100%;background:#ff5b6b;color:#fff;border:0;padding:10px;border-radius:6px;cursor:pointer;font-size:14px">🚪 Cerrar Sesión</button>
 		</aside>
 
 		<main class="main">
@@ -319,7 +417,7 @@
 				<h3>Facturas</h3>
 				<div class="controls">
 					<button class="btn" id="btn-new-invoice">+ Nueva factura</button>
-					<input id="invoice-filter" placeholder="Buscar por cliente o número">
+					<input id="invoice-filter" placeholder="Buscar por cliente o número..." style="padding:10px 15px;border-radius:8px;border:1px solid #3bb4ff;background:#051820;color:#fff;font-size:14px;min-width:300px">
 					<div class="small" id="invoices-summary">Cargando...</div>
 				</div>
 
@@ -556,10 +654,6 @@
 						<span>Subtotal:</span>
 						<span id="invoice-subtotal">$0.00</span>
 					</div>
-					<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-						<span>IVA (19%):</span>
-						<span id="invoice-tax">$0.00</span>
-					</div>
 					<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:var(--accent);padding-top:8px;border-top:1px solid rgba(255,255,255,.1)">
 						<span>Total:</span>
 						<span id="invoice-total">$0.00</span>
@@ -578,6 +672,32 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 	<script>
+		// NUEVO: Sistema de autenticación
+		const AUTH_USERS = {
+			'admin': 'admin123',
+			'mipc': 'mipc2024'
+		};
+
+		function checkAuth() {
+			const isAuthenticated = sessionStorage.getItem('authenticated');
+			return isAuthenticated === 'true';
+		}
+
+		function login(username, password) {
+			if (AUTH_USERS[username] && AUTH_USERS[username] === password) {
+				sessionStorage.setItem('authenticated', 'true');
+				sessionStorage.setItem('username', username);
+				return true;
+			}
+			return false;
+		}
+
+		function logout() {
+			sessionStorage.removeItem('authenticated');
+			sessionStorage.removeItem('username');
+			location.reload();
+		}
+
 		// Configuración de API - solo Cloudflare
 		const API_BASE = "https://collecting-split-counts-operators.trycloudflare.com/api";
 		let API_TIMEOUT_MS = 10000; // 10 segundos timeout por defecto
@@ -879,6 +999,49 @@
 
 		// init
 		document.addEventListener('DOMContentLoaded', async ()=> {
+			// NUEVO: Verificar autenticación
+			const loginScreen = document.getElementById('login-screen');
+			const appContainer = document.querySelector('.app');
+			
+			if (!checkAuth()) {
+				// Mostrar login y ocultar app
+				loginScreen.classList.remove('hidden');
+				appContainer.style.display = 'none';
+				
+				// Manejar submit del formulario
+				const loginForm = document.getElementById('login-form');
+				loginForm.addEventListener('submit', (e) => {
+					e.preventDefault();
+					const username = document.getElementById('login-username').value;
+					const password = document.getElementById('login-password').value;
+					const errorEl = document.getElementById('login-error');
+					
+					if (login(username, password)) {
+						loginScreen.classList.add('hidden');
+						appContainer.style.display = 'flex';
+						initApp();
+					} else {
+						errorEl.classList.add('show');
+						setTimeout(() => errorEl.classList.remove('show'), 3000);
+					}
+				});
+				return; // No inicializar app hasta login exitoso
+			}
+			
+			// Usuario autenticado
+			loginScreen.classList.add('hidden');
+			appContainer.style.display = 'flex';
+			initApp();
+		});
+
+		async function initApp() {
+			// Mostrar usuario logueado
+			const username = sessionStorage.getItem('username');
+			const userInfoEl = document.getElementById('user-info');
+			if(userInfoEl && username) {
+				userInfoEl.textContent = `👤 ${username}`;
+			}
+			
 			bindUI();
 			renderView('orders');
 			await renderOrders();
@@ -890,7 +1053,7 @@
 			
 			// Verificar conexión al inicio
 			await checkConnection();
-		});
+		}
 
 		function bindUI(){
 			// menu
@@ -901,6 +1064,16 @@
 					renderView(li.dataset.view);
 				});
 			});
+
+			// NUEVO: botón de logout
+			const logoutBtn = document.getElementById('btn-logout');
+			if(logoutBtn) {
+				logoutBtn.addEventListener('click', () => {
+					if(confirm('¿Seguro que deseas cerrar sesión?')) {
+						logout();
+					}
+				});
+			}
 
 			$('#btn-add-order').addEventListener('click', ()=> openOrderModal());
 			$('#btn-order-new-client').addEventListener('click', ()=> openClientModal());
@@ -2008,11 +2181,9 @@
 			doc.text('MIPC COMPUTADORES', margin, y);
 			y += 15;
 			doc.setFont(undefined, 'normal');
-			doc.text('NIT: 900.XXX.XXX-X', margin, y);
+			doc.text('Cel: 3202307508', margin, y);
 			y += 12;
-			doc.text('Tel: 300 XXX XXXX', margin, y);
-			y += 12;
-			doc.text('Email: info@mipc.com', margin, y);
+			doc.text('Email: mipcbarbosa@hotmail.com', margin, y);
 
 			// Información del cliente (derecha)
 			y = 110;
@@ -2035,14 +2206,9 @@
 			doc.setFont(undefined, 'normal');
 			doc.text(invoice.date || '', margin + 50, y);
 
-			y += 30;
+			y += 40;
 
-			// Línea separadora
-			doc.setLineWidth(1);
-			doc.line(margin, y, pageWidth - margin, y);
-			y += 20;
-
-			// Tabla de ítems
+			// Tabla de ítems (sin líneas)
 			doc.setFontSize(9);
 			doc.setFont(undefined, 'bold');
 			
@@ -2052,9 +2218,7 @@
 			doc.text('Precio u.', colX[2], y);
 			doc.text('Total', colX[3], y);
 			
-			y += 15;
-			doc.setLineWidth(0.5);
-			doc.line(margin, y - 5, pageWidth - margin, y - 5);
+			y += 20;
 			
 			doc.setFont(undefined, 'normal');
 			
@@ -2072,25 +2236,22 @@
 				y += 20;
 			});
 
-			y += 10;
-			doc.line(margin, y, pageWidth - margin, y);
-			y += 20;
+			y += 25;
 
-			// Totales
-			const totalsX = pageWidth - margin - 150;
-			doc.setFont(undefined, 'normal');
-			doc.text('Subtotal:', totalsX, y);
-			doc.text(formatCurrency(invoice.subtotal || 0), totalsX + 80, y, {align: 'right'});
-			y += 15;
+			// Totales - Sin líneas
+			const totalsLabelX = pageWidth - 180;
+			const totalsValueX = pageWidth - margin;
 			
-			doc.text('IVA (19%):', totalsX, y);
-			doc.text(formatCurrency(invoice.tax || 0), totalsX + 80, y, {align: 'right'});
-			y += 15;
+			doc.setFontSize(10);
+			doc.setFont(undefined, 'normal');
+			doc.text('Subtotal:', totalsLabelX, y);
+			doc.text(formatCurrency(invoice.subtotal || 0), totalsValueX, y, {align: 'right'});
+			y += 25;
 			
 			doc.setFont(undefined, 'bold');
-			doc.setFontSize(11);
-			doc.text('TOTAL:', totalsX, y);
-			doc.text(formatCurrency(invoice.total || 0), totalsX + 80, y, {align: 'right'});
+			doc.setFontSize(12);
+			doc.text('TOTAL:', totalsLabelX, y);
+			doc.text(formatCurrency(invoice.total || 0), totalsValueX, y, {align: 'right'});
 
 			// Notas
 			if(invoice.notes){
@@ -2120,7 +2281,6 @@
 
 		// Modal: ver hoja de vida del equipo
 		async function openEquipmentModal(serial){
-			const modal = $('#modal-equipment');
 			$('#modal-equipment-title').textContent = `Hoja de vida - ${serial}`;
 			const container = $('#equipment-history');
 			container.innerHTML = '';
@@ -2819,7 +2979,7 @@
 					<input type="text" placeholder="Descripción" value="${escapeHtml(item.description||'')}" data-index="${index}" class="item-description">
 					<input type="number" placeholder="Cant." min="1" step="1" value="${item.quantity||1}" data-index="${index}" class="item-quantity" style="max-width:80px">
 					<input type="number" placeholder="Precio u." min="0" step="0.01" value="${item.unitPrice||0}" data-index="${index}" class="item-price" style="max-width:120px">
-					<div class="small" style="max-width:120px">Total: ${formatCurrency(item.total||0)}</div>
+					<div class="small item-total-display" data-index="${index}" style="max-width:120px">Total: ${formatCurrency(item.total||0)}</div>
 					<button type="button" class="btn btn-delete" data-index="${index}" style="padding:6px 10px">✕</button>
 				`;
 				
@@ -2858,7 +3018,10 @@
 					const idx = parseInt(e.target.dataset.index);
 					invoiceItems[idx].quantity = Number(e.target.value) || 1;
 					updateItemTotal(idx);
-					renderInvoiceItems();
+					// Actualizar solo el display del total de este item
+					const totalDisplay = document.querySelector(`.item-total-display[data-index="${idx}"]`);
+					if(totalDisplay) totalDisplay.textContent = `Total: ${formatCurrency(invoiceItems[idx].total||0)}`;
+					updateInvoiceTotals();
 				};
 			});
 
@@ -2867,7 +3030,10 @@
 					const idx = parseInt(e.target.dataset.index);
 					invoiceItems[idx].unitPrice = Number(e.target.value) || 0;
 					updateItemTotal(idx);
-					renderInvoiceItems();
+					// Actualizar solo el display del total de este item
+					const totalDisplay = document.querySelector(`.item-total-display[data-index="${idx}"]`);
+					if(totalDisplay) totalDisplay.textContent = `Total: ${formatCurrency(invoiceItems[idx].total||0)}`;
+					updateInvoiceTotals();
 				};
 			});
 
@@ -2891,11 +3057,9 @@
 		/* NUEVO: actualizar totales de la factura */
 		function updateInvoiceTotals(){
 			const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
-			const tax = subtotal * 0.19; // IVA 19%
-			const total = subtotal + tax;
+			const total = subtotal; // Sin IVA
 
 			$('#invoice-subtotal').textContent = formatCurrency(subtotal);
-			$('#invoice-tax').textContent = formatCurrency(tax);
 			$('#invoice-total').textContent = formatCurrency(total);
 		}
 
@@ -2910,8 +3074,7 @@
 			}
 
 			const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
-			const tax = subtotal * 0.19;
-			const total = subtotal + tax;
+			const total = subtotal; // Sin IVA
 
 			const invoices = await loadInvoices();
 
@@ -2927,7 +3090,6 @@
 						notes: f.notes.value,
 						items: invoiceItems,
 						subtotal,
-						tax,
 						total,
 						updatedAt: new Date().toISOString()
 					};
@@ -2942,7 +3104,6 @@
 					notes: f.notes.value,
 					items: invoiceItems,
 					subtotal,
-					tax,
 					total,
 					createdAt: new Date().toISOString(),
 					updatedAt: new Date().toISOString()
@@ -3001,11 +3162,9 @@
 			doc.text('MIPC COMPUTADORES', margin, y);
 			y += 15;
 			doc.setFont(undefined, 'normal');
-			doc.text('NIT: 900.XXX.XXX-X', margin, y);
+			doc.text('Cel: 3202307508', margin, y);
 			y += 12;
-			doc.text('Tel: 300 XXX XXXX', margin, y);
-			y += 12;
-			doc.text('Email: info@mipc.com', margin, y);
+			doc.text('Email: mipcbarbosa@hotmail.com', margin, y);
 
 			// Información del cliente (derecha)
 			y = 110;
@@ -3028,14 +3187,9 @@
 			doc.setFont(undefined, 'normal');
 			doc.text(invoice.date || '', margin + 50, y);
 
-			y += 30;
+			y += 40;
 
-			// Línea separadora
-			doc.setLineWidth(1);
-			doc.line(margin, y, pageWidth - margin, y);
-			y += 20;
-
-			// Tabla de ítems
+			// Tabla de ítems (sin líneas)
 			doc.setFontSize(9);
 			doc.setFont(undefined, 'bold');
 			
@@ -3045,9 +3199,7 @@
 			doc.text('Precio u.', colX[2], y);
 			doc.text('Total', colX[3], y);
 			
-			y += 15;
-			doc.setLineWidth(0.5);
-			doc.line(margin, y - 5, pageWidth - margin, y - 5);
+			y += 20;
 			
 			doc.setFont(undefined, 'normal');
 			
@@ -3065,25 +3217,22 @@
 				y += 20;
 			});
 
-			y += 10;
-			doc.line(margin, y, pageWidth - margin, y);
-			y += 20;
+			y += 25;
 
-			// Totales
-			const totalsX = pageWidth - margin - 150;
-			doc.setFont(undefined, 'normal');
-			doc.text('Subtotal:', totalsX, y);
-			doc.text(formatCurrency(invoice.subtotal || 0), totalsX + 80, y, {align: 'right'});
-			y += 15;
+			// Totales - Sin líneas
+			const totalsLabelX = pageWidth - 180;
+			const totalsValueX = pageWidth - margin;
 			
-			doc.text('IVA (19%):', totalsX, y);
-			doc.text(formatCurrency(invoice.tax || 0), totalsX + 80, y, {align: 'right'});
-			y += 15;
+			doc.setFontSize(10);
+			doc.setFont(undefined, 'normal');
+			doc.text('Subtotal:', totalsLabelX, y);
+			doc.text(formatCurrency(invoice.subtotal || 0), totalsValueX, y, {align: 'right'});
+			y += 25;
 			
 			doc.setFont(undefined, 'bold');
-			doc.setFontSize(11);
-			doc.text('TOTAL:', totalsX, y);
-			doc.text(formatCurrency(invoice.total || 0), totalsX + 80, y, {align: 'right'});
+			doc.setFontSize(12);
+			doc.text('TOTAL:', totalsLabelX, y);
+			doc.text(formatCurrency(invoice.total || 0), totalsValueX, y, {align: 'right'});
 
 			// Notas
 			if(invoice.notes){
