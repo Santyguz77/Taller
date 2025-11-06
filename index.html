@@ -32,6 +32,10 @@
 		.form-row input, .form-row textarea, select{flex:1;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:#051417;color:#eaf6f3}
 		.footer-note{margin-top:12px;color:var(--muted);font-size:13px}
 		.small{font-size:13px;color:var(--muted)}
+		
+		/* estilos para checkbox deshabilitado */
+		input[type="checkbox"]:disabled{opacity:0.4;cursor:not-allowed}
+		input[type="checkbox"]:disabled + span{opacity:0.5;cursor:not-allowed}
 
 		/* estilos para galería de imágenes */
 		.image-preview-container{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -633,6 +637,12 @@
 						<option value="paid">Pagada</option>
 					</select>
 				</div>
+				<div class="form-row" style="align-items:center;background:rgba(59,180,255,.05);padding:10px;border-radius:6px;border:1px solid rgba(59,180,255,.15)">
+					<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;user-select:none">
+						<input type="checkbox" name="registerInFinance" id="registerInFinance" checked style="width:auto;cursor:pointer;transform:scale(1.2)">
+						<span style="font-size:13px">💰 Registrar como ingreso en Finanzas <span class="small">(solo si está pagada)</span></span>
+					</label>
+				</div>
 				<div class="form-row">
 					<textarea name="notes" placeholder="Notas (opcional)" rows="2"></textarea>
 				</div>
@@ -1155,6 +1165,25 @@
 
 			const invoiceFilter = document.getElementById('invoice-filter');
 			if(invoiceFilter) invoiceFilter.addEventListener('input', async ()=> await renderInvoices());
+
+			// NUEVO: manejar checkbox de finanzas según estado de pago
+			const paymentStatusSelect = formInvoice ? formInvoice.querySelector('select[name="paymentStatus"]') : null;
+			const registerFinanceCheckbox = document.getElementById('registerInFinance');
+			if(paymentStatusSelect && registerFinanceCheckbox){
+				const financeLabel = registerFinanceCheckbox.closest('label');
+				const updateFinanceCheckbox = ()=> {
+					const isPaid = paymentStatusSelect.value === 'paid';
+					registerFinanceCheckbox.disabled = !isPaid;
+					if(financeLabel){
+						financeLabel.style.cursor = isPaid ? 'pointer' : 'not-allowed';
+						financeLabel.style.opacity = isPaid ? '1' : '0.5';
+					}
+					if(!isPaid) registerFinanceCheckbox.checked = false;
+					else registerFinanceCheckbox.checked = true;
+				};
+				paymentStatusSelect.addEventListener('change', updateFinanceCheckbox);
+				updateFinanceCheckbox(); // llamar al inicio
+			}
 		}
 
 		async function renderView(view){
@@ -2053,7 +2082,7 @@
 		}
 
 		// NUEVO: procesar inventario y finanzas de factura
-		async function processInvoiceInventoryAndFinance(invoice){
+		async function processInvoiceInventoryAndFinance(invoice, registerInFinance = true){
 			const inventory = await loadInventory();
 			
 			// descontar inventario
@@ -2087,8 +2116,8 @@
 			}
 			await saveInventoryMovements(movements);
 
-			// registrar en finanzas si está pagada
-			if(invoice.paymentStatus === 'paid'){
+			// registrar en finanzas si está pagada Y el usuario lo autorizó
+			if(invoice.paymentStatus === 'paid' && registerInFinance){
 				const transactions = await loadTransactions();
 				transactions.unshift({
 					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
@@ -2279,31 +2308,41 @@
 		// helpers
 		function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 
-		// Modal: ver hoja de vida del equipo
-		async function openEquipmentModal(serial){
-			$('#modal-equipment-title').textContent = `Hoja de vida - ${serial}`;
-			const container = $('#equipment-history');
-			container.innerHTML = '';
-			const list = await loadEquipments();
-			const eq = list.find(e => e.serial && e.serial.toLowerCase() === serial.toLowerCase());
-			if(!eq){
-				container.innerHTML = '<div class="history-item">No hay historial para este número de serie.</div>';
+	// Modal: ver hoja de vida del equipo
+	async function openEquipmentModal(serial){
+		$('#modal-equipment-title').textContent = `Hoja de vida - ${serial}`;
+		const container = $('#equipment-history');
+		container.innerHTML = '<div class="small" style="padding:10px">Cargando historial...</div>';
+		
+		const list = await loadEquipments();
+		const clients = await loadClients(); // Cargar clientes una sola vez
+		
+		const eq = list.find(e => e.serial && e.serial.toLowerCase() === serial.toLowerCase());
+		
+		container.innerHTML = ''; // Limpiar mensaje de carga
+		
+		if(!eq){
+			container.innerHTML = '<div class="history-item" style="padding:10px">No hay historial para este número de serie.</div>';
+		} else {
+			eq.history = eq.history || [];
+			
+			if(eq.history.length === 0) {
+				container.innerHTML = '<div class="history-item" style="padding:10px">No hay registros en el historial.</div>';
 			} else {
-				eq.history = eq.history || [];
 				eq.history.forEach(h=>{
-					const client = (async ()=> { const c = await findClientById(h.clientId); return c || {name:'--'}; })();
-					// para simplicidad mostramos cliente por id si existe (carga ya asíncrona)
-					const clientSync = (function(){ /* placeholder */ })();
+					const client = clients.find(c => c.id === h.clientId) || {name:'--'};
 					const div = document.createElement('div');
 					div.className = 'history-item';
-					div.innerHTML = `<strong>${new Date(h.date).toLocaleString()}</strong> — ${escapeHtml(h.status||'')} — ${escapeHtml(h.failure||'')}<br><span class="small">Cliente: ${escapeHtml(((findClientById(h.clientId)||{}).name)||'--')} — Técnico: ${escapeHtml(h.technician||'')}</span>`;
+					div.style.cssText = 'padding:10px;margin-bottom:8px;background:#051820;border-radius:4px;border-left:3px solid var(--accent)';
+					div.innerHTML = `<strong>${new Date(h.date).toLocaleString()}</strong> — ${escapeHtml(h.status||'')} — ${escapeHtml(h.failure||'')}<br><span class="small">Cliente: ${escapeHtml(client.name)} — Técnico: ${escapeHtml(h.technician||'')}</span>`;
 					container.appendChild(div);
 				});
 			}
-			modal.classList.add('show');
 		}
-
-		// Generar link de WhatsApp para una orden
+		
+		const modal = $('#modal-equipment');
+		modal.classList.add('show');
+	}		// Generar link de WhatsApp para una orden
 		async function generateWhatsAppLink(order){
 			const client = await findClientById(order.clientId) || {};
 			let phone = client.phone || '';
@@ -3110,8 +3149,9 @@
 				};
 				invoices.unshift(invoice);
 
-				// descontar inventario y registrar en finanzas si está pagada
-				await processInvoiceInventoryAndFinance(invoice);
+				// descontar inventario y registrar en finanzas según checkbox
+				const registerInFinance = f.registerInFinance ? f.registerInFinance.checked : true;
+				await processInvoiceInventoryAndFinance(invoice, registerInFinance);
 			}
 
 			await saveInvoices(invoices);
