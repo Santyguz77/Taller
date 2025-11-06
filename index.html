@@ -578,38 +578,63 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 	<script>
-		// NUEVO: configuración de API con fallback y caché local
-		const REMOTE_API = "https://operated-train-approve-territory.trycloudflare.com/api"; // puede ser inestable
-		let lastApiBase = localStorage.getItem('API_URL_LAST') || null;
-		let API_TIMEOUT_MS = Number(localStorage.getItem('API_TIMEOUT_MS')||'1200') || 1200; // tiempo máximo por intento de API
+		// Configuración de API - solo Cloudflare
+		const API_BASE = "https://chelsea-connector-lens-radar.trycloudflare.com/api";
+		let API_TIMEOUT_MS = 10000; // 10 segundos timeout por defecto
+		let API_SAVE_TIMEOUT_MS = 30000; // 30 segundos para guardar (imágenes)
+		let MAX_RETRIES = 2; // solo 2 intentos
+		let isOnline = true;
+		let reconnectInterval = null;
 
-		function getApiCandidates(){
-			const override = localStorage.getItem('API_URL_OVERRIDE');
-			const sameOrigin = (location.origin && location.origin.startsWith('http')) ? (location.origin + '/api') : null;
-			const local = 'http://localhost:3000/api';
-			const list = [];
-			// priorizar la última API que funcionó
-			if(lastApiBase) list.push(lastApiBase);
-			if(override) list.push(override);
-			if(sameOrigin && !list.includes(sameOrigin)) list.push(sameOrigin);
-			if(!list.includes(local)) list.push(local);
-			if(!list.includes(REMOTE_API)) list.push(REMOTE_API);
-			return list;
-		}
-
-		function setOnline(ok, base){
+		function setOnline(ok){
 			const el = document.getElementById('conn-status');
 			if(!el) return;
+			const wasOffline = !isOnline;
+			isOnline = ok;
+			
 			if(ok){
-				lastApiBase = base || lastApiBase;
-				if(lastApiBase){ try{ localStorage.setItem('API_URL_LAST', lastApiBase); }catch{} }
 				el.textContent = 'Conectado';
 				el.style.color = '#7af0a5';
-				if(base) el.title = base;
+				el.title = API_BASE;
+				
+				// Detener reintentos si se reconecta
+				if(reconnectInterval){
+					clearInterval(reconnectInterval);
+					reconnectInterval = null;
+				}
+				
+				// Si acabamos de reconectar, recargar datos
+				if(wasOffline){
+					console.log('Reconectado, recargando datos...');
+					refreshCurrentView();
+				}
 			} else {
-				el.textContent = 'Sin conexión (datos locales)';
-				el.style.color = '#ffcc33';
+				el.textContent = 'Sin conexión';
+				el.style.color = '#ff6666';
+				
+				// Iniciar reintentos automáticos cada 15 segundos
+				if(!reconnectInterval){
+					reconnectInterval = setInterval(async ()=> {
+						console.log('Intentando reconectar...');
+						await checkConnection();
+					}, 15000);
+				}
 			}
+		}
+
+		// Verificar conexión con un endpoint simple
+		async function checkConnection(){
+			try{
+				const res = await fetchWithTimeout(`${API_BASE}/clients`, { method:'GET' }, 5000);
+				if(res.ok){
+					setOnline(true);
+					return true;
+				}
+			}catch(e){
+				console.warn('Sin conexión:', e.message);
+			}
+			setOnline(false);
+			return false;
 		}
 
 		// helper: fetch con timeout
@@ -624,66 +649,149 @@
 			}
 		}
 
+		// Intento con reintentos mínimos
+		async function fetchWithRetry(url, options={}, retries=MAX_RETRIES, customTimeout=null){
+			const timeout = customTimeout || API_TIMEOUT_MS;
+			let lastError = null;
+			
+			for(let i = 0; i < retries; i++){
+				try{
+					const res = await fetchWithTimeout(url, options, timeout);
+					if(res.ok) return res;
+					
+					// Si es error del servidor y no es el último intento
+					if(res.status >= 500 && i < retries - 1){
+						console.warn(`Error del servidor (${res.status}), reintentando...`);
+						await sleep(1000);
+						continue;
+					}
+					
+					// Si no es 500 o es el último intento, retornar la respuesta
+					return res;
+				}catch(err){
+					lastError = err;
+					// Solo reintentar una vez más en caso de timeout o error de red
+					if(i < retries - 1){
+						console.warn(`Error de conexión, reintentando (${i+1}/${retries})...`);
+						await sleep(500);
+						continue;
+					}
+				}
+			}
+			
+			// Si llegamos aquí, todos los intentos fallaron
+			throw lastError || new Error('Todos los intentos fallaron');
+		}
+
+		function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
 		// funciones reutilizables para comunicarse con el backend
 		async function loadTable(table) {
-			const cacheKey = `cache:${table}`;
-			const bases = getApiCandidates();
-			const attempts = bases.map(base => (
-				fetchWithTimeout(`${base}/${table}`, { method:'GET' })
-					.then(async res => {
-						if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-						const data = await res.json();
-						return { base, data };
-					})
-			));
 			try{
-				// tomar la primera respuesta exitosa
-				const { base, data } = await Promise.any(attempts);
-				try{ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); }catch{}
-				setOnline(true, base);
+				const res = await fetchWithRetry(`${API_BASE}/${table}`, { method:'GET' });
+				if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+				const data = await res.json();
+				setOnline(true);
 				return Array.isArray(data) ? data : [];
 			}catch(err){
-				console.warn(`Todas las APIs fallaron en GET ${table}:`, err && err.message ? err.message : err);
-				// Fallback a caché
-				try{
-					const cached = localStorage.getItem(cacheKey);
-					if(cached){
-						const obj = JSON.parse(cached);
-						setOnline(false);
-						return Array.isArray(obj.data) ? obj.data : [];
-					}
-				}catch{}
+				console.error(`Error cargando ${table}:`, err.message);
 				setOnline(false);
 				return [];
 			}
 		}
 
 		async function saveTable(table, data) {
-			const cacheKey = `cache:${table}`;
-			const bases = getApiCandidates();
-			for(const base of bases){
-				try{
-					const res = await fetchWithTimeout(`${base}/${table}`, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(data)
-					}, API_TIMEOUT_MS);
-					if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-					try{ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); }catch{}
-					setOnline(true, base);
-					return;
-				}catch(err){
-					console.warn(`Fallo guardando en ${base} (${table})`, err && err.message ? err.message : err);
+			try{
+				console.log(`Guardando ${table}, registros: ${data.length}, con timeout de ${API_SAVE_TIMEOUT_MS}ms`);
+				
+				// Calcular tamaño aproximado de los datos
+				const dataSize = JSON.stringify(data).length;
+				console.log(`Tamaño de datos: ${(dataSize / 1024).toFixed(2)} KB`);
+				
+				// Usar timeout más largo para operaciones de guardado (especialmente con imágenes)
+				const timeout = API_SAVE_TIMEOUT_MS;
+				const res = await fetchWithRetry(`${API_BASE}/${table}`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(data)
+				}, MAX_RETRIES, timeout);
+				
+				if(!res.ok){
+					const errorText = await res.text().catch(() => res.statusText);
+					console.error(`Respuesta del servidor:`, errorText);
+					throw new Error(`Error del servidor (${res.status}): ${errorText}`);
+				}
+				
+				console.log(`✅ ${table} guardado exitosamente`);
+				setOnline(true);
+			}catch(err){
+				console.error(`❌ Error guardando ${table}:`, err);
+				setOnline(false);
+				
+				// Mensaje más específico según el tipo de error
+				if(err.name === 'AbortError' || err.message.includes('timeout')){
+					throw new Error('La conexión tardó demasiado. Por favor intenta de nuevo.');
+				} else if(err.message.includes('Failed to fetch') || err.message.includes('NetworkError')){
+					throw new Error('No se pudo conectar al servidor. Verifica tu conexión a internet.');
+				} else {
+					throw new Error(err.message || 'No se pudo guardar. Intenta de nuevo.');
 				}
 			}
-			// si todas fallan, guardar en caché para no perder datos y no bloquear
-			try{ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); }catch{}
-			setOnline(false);
+		}
+
+		// NUEVO: Guardar/actualizar un solo item (más eficiente)
+		async function saveItem(table, item) {
+			try{
+				console.log(`Guardando item individual en ${table}:`, item.id);
+				const itemSize = JSON.stringify(item).length;
+				console.log(`Tamaño del item: ${(itemSize / 1024).toFixed(2)} KB`);
+				
+				const res = await fetchWithRetry(`${API_BASE}/${table}/${item.id}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(item)
+				}, MAX_RETRIES, API_SAVE_TIMEOUT_MS);
+				
+				if(!res.ok){
+					const errorText = await res.text().catch(() => res.statusText);
+					throw new Error(`Error del servidor (${res.status}): ${errorText}`);
+				}
+				
+				console.log(`✅ Item guardado en ${table}`);
+				setOnline(true);
+			}catch(err){
+				console.error(`❌ Error guardando item en ${table}:`, err);
+				setOnline(false);
+				throw new Error(err.message || 'No se pudo guardar. Intenta de nuevo.');
+			}
+		}
+
+		// NUEVO: Eliminar un solo item
+		async function deleteItem(table, id) {
+			try{
+				const res = await fetchWithRetry(`${API_BASE}/${table}/${id}`, {
+					method: 'DELETE'
+				}, MAX_RETRIES);
+				
+				if(!res.ok){
+					throw new Error(`Error al eliminar (${res.status})`);
+				}
+				
+				setOnline(true);
+			}catch(err){
+				console.error(`Error eliminando de ${table}:`, err);
+				setOnline(false);
+				throw err;
+			}
 		}
 
 		// Storage helpers (ahora asíncronos y delegan a loadTable/saveTable)
 		async function loadOrders(){ return await loadTable('orders'); }
 		async function saveOrders(list){ await saveTable('orders', list); }
+		// NUEVO: helper para guardar orden individual
+		async function saveOrder(order){ await saveItem('orders', order); }
+		async function deleteOrder_API(id){ await deleteItem('orders', id); }
+		
 		async function loadClients(){ return await loadTable('clients'); }
 		async function saveClients(list){ await saveTable('clients', list); }
 		async function loadEquipments(){ return await loadTable('equipments'); }
@@ -751,6 +859,23 @@
 		// NUEVO: estado de facturas
 		let editingInvoiceId = null;
 		let invoiceItems = []; // ítems temporales de la factura actual
+		let currentView = 'orders'; // rastrear vista actual
+
+		// Refrescar la vista actual después de reconectar
+		async function refreshCurrentView(){
+			try{
+				if(currentView === 'orders') await renderOrders();
+				else if(currentView === 'clients') await renderClients();
+				else if(currentView === 'finance'){
+					await populateFinanceCategorySelects();
+					await renderFinance();
+				}
+				else if(currentView === 'inventory') await renderInventory();
+				else if(currentView === 'invoices') await renderInvoices();
+			}catch(e){
+				console.warn('Error al refrescar vista:', e);
+			}
+		}
 
 		// init
 		document.addEventListener('DOMContentLoaded', async ()=> {
@@ -762,6 +887,9 @@
 			await renderFinance();
 			await renderInventory();
 			await renderInvoices(); // NUEVO
+			
+			// Verificar conexión al inicio
+			await checkConnection();
 		});
 
 		function bindUI(){
@@ -857,6 +985,7 @@
 		}
 
 		async function renderView(view){
+			currentView = view; // guardar vista actual
 			$('#view-title').textContent = view === 'orders' ? 'Órdenes' : view === 'clients' ? 'Clientes' : view === 'invoices' ? 'Facturas' : view === 'finance' ? 'Finanzas' : view === 'inventory' ? 'Inventario' : 'Configuración';
 			$('#orders-section').style.display = view === 'orders' ? 'block' : 'none';
 			$('#clients-section').style.display = view === 'clients' ? 'block' : 'none';
@@ -874,6 +1003,14 @@
 			const statusFilter = $('#status-filter').value;
 			const paymentFilter = $('#payment-filter').value; // nuevo
 			const all = await loadOrders();
+			
+			// IMPORTANTE: Ordenar por fecha descendente (más recientes primero)
+			all.sort((a, b) => {
+				const dateA = new Date(a.date || 0);
+				const dateB = new Date(b.date || 0);
+				return dateB - dateA; // descendente
+			});
+			
 			const items = all.filter(o=>{
 				if(statusFilter && (o.status||'ingresado') !== statusFilter) return false;
 				// nuevo: filtro de pago
@@ -1285,35 +1422,90 @@
 
 		// nueva variable global para almacenar imágenes temporalmente
 		let currentOrderImages = [];
+		const MAX_IMAGES_PER_ORDER = 5; // máximo 5 imágenes por orden
 
 		// nueva función: manejar carga de imágenes
 		function handleImageUpload(e){
 			const files = Array.from(e.target.files);
 			if(files.length === 0) return;
 			
-			files.forEach(file => {
+			// Verificar límite de imágenes
+			if(currentOrderImages.length >= MAX_IMAGES_PER_ORDER){
+				alert(`Máximo ${MAX_IMAGES_PER_ORDER} imágenes por orden. Elimina algunas para agregar más.`);
+				e.target.value = '';
+				return;
+			}
+			
+			const remainingSlots = MAX_IMAGES_PER_ORDER - currentOrderImages.length;
+			const filesToProcess = files.slice(0, remainingSlots);
+			
+			if(files.length > remainingSlots){
+				alert(`Solo se agregarán ${remainingSlots} imágenes para no exceder el límite de ${MAX_IMAGES_PER_ORDER}.`);
+			}
+			
+			filesToProcess.forEach(file => {
 				if(!file.type.startsWith('image/')) return;
 				
-				// limitar tamaño (máx 2MB por imagen)
-				if(file.size > 2 * 1024 * 1024){
-					alert(`La imagen ${file.name} es muy grande. Máximo 2MB por imagen.`);
+				// limitar tamaño (máx 5MB por imagen antes de comprimir)
+				if(file.size > 5 * 1024 * 1024){
+					alert(`La imagen ${file.name} es muy grande. Máximo 5MB por imagen.`);
 					return;
 				}
 
 				const reader = new FileReader();
 				reader.onload = (ev) => {
-					currentOrderImages.push({
-						data: ev.target.result,
-						name: file.name,
-						date: new Date().toISOString()
+					// Comprimir la imagen antes de guardarla
+					compressImage(ev.target.result, file.name, (compressedData) => {
+						if(currentOrderImages.length < MAX_IMAGES_PER_ORDER){
+							currentOrderImages.push({
+								data: compressedData,
+								name: file.name,
+								date: new Date().toISOString()
+							});
+							renderImagePreviews();
+						}
 					});
-					renderImagePreviews();
 				};
 				reader.readAsDataURL(file);
 			});
 			
 			// limpiar input para permitir seleccionar las mismas imágenes nuevamente
 			e.target.value = '';
+		}
+
+		// Nueva función: comprimir imagen para reducir tamaño AGRESIVAMENTE
+		function compressImage(dataUrl, fileName, callback){
+			const img = new Image();
+			img.onload = () => {
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+				
+				// Redimensionar a máximo 1200px (más pequeño para reducir tamaño)
+				let width = img.width;
+				let height = img.height;
+				const maxWidth = 1200;
+				const maxHeight = 1200;
+				
+				if(width > maxWidth || height > maxHeight){
+					const ratio = Math.min(maxWidth / width, maxHeight / height);
+					width = width * ratio;
+					height = height * ratio;
+				}
+				
+				canvas.width = width;
+				canvas.height = height;
+				ctx.drawImage(img, 0, 0, width, height);
+				
+				// Comprimir a JPEG con calidad 0.6 (60%) - más compresión
+				const compressedData = canvas.toDataURL('image/jpeg', 0.6);
+				
+				// Verificar tamaño final
+				const sizeInKB = (compressedData.length * 0.75) / 1024; // aproximado
+				console.log(`Imagen comprimida: ${fileName}, tamaño ~${sizeInKB.toFixed(2)} KB`);
+				
+				callback(compressedData);
+			};
+			img.src = dataUrl;
 		}
 
 		// nueva función: renderizar vista previa de imágenes
@@ -1351,12 +1543,43 @@
 		async function saveOrderFromForm(e){
 			e.preventDefault();
 			const f = e.target;
-			const list = await loadOrders();
-			if(editingOrderId){
-				const idx = list.findIndex(x=>x.id==editingOrderId);
-				if(idx>-1){
-					list[idx] = {
-						...list[idx],
+			
+			// Mostrar indicador de carga
+			const submitBtn = f.querySelector('button[type="submit"]');
+			const originalText = submitBtn.textContent;
+			submitBtn.disabled = true;
+			submitBtn.textContent = 'Guardando...';
+			
+			try{
+				let orderToSave;
+				
+				if(editingOrderId){
+					// Cargar la orden existente
+					const list = await loadOrders();
+					const existing = list.find(x=>x.id==editingOrderId);
+					if(existing){
+						orderToSave = {
+							...existing, // Esto preserva TODOS los campos existentes incluyendo 'date'
+							clientId: f.clientId.value,
+							brand: f.brand.value,
+							serial: f.serial.value,
+							model: f.model.value,
+							accessories: f.accessories.value,
+							failure: f.failure.value,
+							technician: f.technician.value,
+							price: f.price.value || null,
+							notes: f.notes.value,
+							status: f.status ? f.status.value || f.status : (existing.status || 'ingresado'),
+							paid: f.paid.value === 'true',
+							images: currentOrderImages
+							// NO modificamos 'date' para mantener la posición original
+						};
+					}
+				} else {
+					// Nueva orden (se agrega al inicio por defecto)
+					orderToSave = {
+						id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
+						accessToken: generateAccessToken(),
 						clientId: f.clientId.value,
 						brand: f.brand.value,
 						serial: f.serial.value,
@@ -1366,36 +1589,27 @@
 						technician: f.technician.value,
 						price: f.price.value || null,
 						notes: f.notes.value,
-						status: f.status ? f.status.value || f.status : (list[idx].status || 'ingresado'),
+						status: f.status ? f.status.value || 'ingresado' : 'ingresado',
 						paid: f.paid.value === 'true',
+						date: new Date().toISOString(),
 						images: currentOrderImages
 					};
-					await upsertEquipmentFromOrder(list[idx]);
 				}
-			} else {
-				const item = {
-					id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString().slice(-6),
-					accessToken: generateAccessToken(),
-					clientId: f.clientId.value,
-					brand: f.brand.value,
-					serial: f.serial.value,
-					model: f.model.value,
-					accessories: f.accessories.value,
-					failure: f.failure.value,
-					technician: f.technician.value,
-					price: f.price.value || null,
-					notes: f.notes.value,
-					status: f.status ? f.status.value || 'ingresado' : 'ingresado',
-					paid: f.paid.value === 'true',
-					date: new Date().toISOString(),
-					images: currentOrderImages
-				};
-				list.unshift(item);
-				await upsertEquipmentFromOrder(item);
+				
+				// Guardar solo esta orden (mucho más eficiente)
+				await saveOrder(orderToSave);
+				await upsertEquipmentFromOrder(orderToSave);
+				
+				closeModal('#modal-order');
+				await renderOrders();
+			}catch(err){
+				alert('Error al guardar: ' + err.message);
+				console.error(err);
+			}finally{
+				// Restaurar botón
+				submitBtn.disabled = false;
+				submitBtn.textContent = originalText;
 			}
-			await saveOrders(list);
-			closeModal('#modal-order');
-			await renderOrders();
 		}
 
 		// nueva función: actualizar estado rápidamente
@@ -2049,7 +2263,7 @@
 			await renderFinance();
 		}
 
-		/* ===================== INVENTARIO ===================== */
+		//INVENTARIO
 		// Renderizar tabla de inventario
 		async function renderInventory(){
 			const tbody = document.querySelector('#inventory-table tbody');
@@ -2895,5 +3109,4 @@
 		}
 	</script>
 </body>
-
 </html>
