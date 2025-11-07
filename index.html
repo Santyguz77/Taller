@@ -253,6 +253,266 @@
 		.login-error.show {
 			display: block;
 		}
+
+		/* ============================================
+		   MEJORAS RESPONSIVE PARA MÓVILES
+		   ============================================ */
+		
+		/* Ocultar sidebar en móviles y agregar menú hamburguesa */
+		@media (max-width: 768px) {
+			/* Sidebar oculto por defecto */
+			.sidebar {
+				position: fixed;
+				left: -260px;
+				top: 0;
+				bottom: 0;
+				width: 240px;
+				z-index: 1000;
+				transition: left 0.3s ease;
+			}
+			
+			.sidebar.show-mobile {
+				left: 0;
+			}
+			
+			/* Overlay para cerrar el menú */
+			.sidebar-overlay {
+				display: none;
+				position: fixed;
+				inset: 0;
+				background: rgba(0,0,0,0.5);
+				z-index: 999;
+			}
+			
+			.sidebar-overlay.show {
+				display: block;
+			}
+			
+			/* Botón hamburguesa */
+			.mobile-menu-btn {
+				display: block;
+				position: fixed;
+				top: 15px;
+				left: 15px;
+				z-index: 998;
+				background: var(--accent);
+				color: #07121a;
+				border: 0;
+				padding: 10px 14px;
+				border-radius: 8px;
+				cursor: pointer;
+				font-size: 20px;
+				box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+			}
+			
+			/* Main ocupa todo el ancho */
+			.main {
+				padding: 70px 15px 15px 15px;
+				width: 100%;
+			}
+			
+			/* Header más compacto */
+			.header {
+				flex-direction: column;
+				align-items: stretch;
+				gap: 12px;
+			}
+			
+			.header h2 {
+				font-size: 20px;
+				margin: 0;
+			}
+			
+			/* Controles en columna */
+			.controls {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			
+			/* Botones más grandes para facilitar el toque */
+			button.btn {
+				min-height: 48px;
+				font-size: 15px;
+				padding: 12px 16px;
+				width: 100%;
+			}
+			
+			/* Tablas con scroll horizontal */
+			.table-scroll {
+				margin: 0 -15px;
+				padding: 0 15px;
+			}
+			
+			table {
+				font-size: 13px;
+			}
+			
+			th, td {
+				padding: 10px 8px;
+				font-size: 13px;
+			}
+			
+			/* Acciones en columna para mejor visualización */
+			td.actions {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			
+			td.actions button {
+				width: 100%;
+				margin: 3px 0;
+			}
+			
+			/* Modal adaptado */
+			.modal .panel {
+				width: calc(100% - 30px);
+				max-width: 500px;
+				max-height: 85vh;
+				margin: 15px;
+			}
+			
+			/* Formularios en columna */
+			.form-row {
+				flex-direction: column;
+			}
+			
+			.form-row input,
+			.form-row textarea,
+			.form-row select {
+				width: 100%;
+				font-size: 16px; /* Evita zoom automático en iOS */
+				min-height: 44px;
+			}
+			
+			/* Badges más grandes */
+			.status-badge,
+			.payment-badge,
+			.badge-status-paid,
+			.badge-status-unpaid,
+			.badge-status-partial {
+				font-size: 13px;
+				padding: 6px 10px;
+			}
+			
+			/* Filtros adaptables */
+			#orders-section .small.filters {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			
+			#orders-section .small.filters select,
+			#orders-section .small.filters input {
+				width: 100%;
+				min-height: 44px;
+				font-size: 15px;
+			}
+			
+			/* Items de factura adaptables */
+			.invoice-item-row {
+				flex-direction: column;
+				gap: 10px;
+			}
+			
+			.invoice-item-row input,
+			.invoice-item-row select {
+				width: 100%;
+				min-height: 44px;
+				font-size: 15px;
+			}
+			
+			/* Galería de imágenes más grande en móvil */
+			.image-preview {
+				width: 100px;
+				height: 100px;
+			}
+			
+			/* Cards más espaciados */
+			.card {
+				padding: 16px;
+				margin-bottom: 12px;
+			}
+			
+			/* Historial modal más alto */
+			.history-list {
+				max-height: 400px;
+			}
+			
+			/* Login responsive */
+			.login-container {
+				width: calc(100% - 40px);
+				padding: 30px 20px;
+			}
+		}
+		
+		/* Mejoras adicionales para pantallas muy pequeñas */
+		@media (max-width: 480px) {
+			.main {
+				padding: 65px 10px 10px 10px;
+			}
+			
+			table {
+				font-size: 12px;
+				min-width: 650px;
+			}
+			
+			th, td {
+				padding: 8px 6px;
+				font-size: 12px;
+			}
+			
+			.header h2 {
+				font-size: 18px;
+			}
+			
+			.modal .panel {
+				width: calc(100% - 20px);
+				margin: 10px;
+				padding: 15px;
+			}
+			
+			/* Textos más pequeños pero legibles */
+			.small {
+				font-size: 12px;
+			}
+			
+			/* Botones de acciones más compactos en tablas */
+			td.actions button {
+				font-size: 12px;
+				padding: 8px;
+				min-height: 36px;
+			}
+		}
+		
+		/* Mejoras para tablets (pantallas medianas) */
+		@media (min-width: 769px) and (max-width: 1024px) {
+			.sidebar {
+				width: 200px;
+			}
+			
+			.main {
+				padding: 18px;
+			}
+			
+			table {
+				font-size: 13px;
+			}
+			
+			th, td {
+				padding: 8px;
+			}
+			
+			.modal .panel {
+				width: 90%;
+				max-width: 700px;
+			}
+		}
+		
+		/* Ocultar botón hamburguesa en desktop */
+		@media (min-width: 769px) {
+			.mobile-menu-btn {
+				display: none;
+			}
+		}
 	</style>
 </head>
 <body>
@@ -272,8 +532,14 @@
 		</div>
 	</div>
 
+	<!-- Botón menú móvil -->
+	<button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+	
+	<!-- Overlay para cerrar menú móvil -->
+	<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
 	<div class="app">
-		<aside class="sidebar card">
+		<aside class="sidebar card" id="sidebar">
 			<div class="brand">Mipc Computadores</div>
 			<div id="user-info" class="small" style="color:var(--accent);margin-bottom:15px;padding:8px;background:rgba(199,255,0,.05);border-radius:6px;text-align:center"></div>
 			<ul class="menu">
@@ -430,14 +696,12 @@
 
 			<!-- NUEVO: Sección Facturas -->
 			<section id="invoices-section" class="card" style="display:none;margin-top:12px">
-				<h3>Facturas</h3>
-				<div class="controls">
-					<button class="btn" id="btn-new-invoice">+ Nueva factura</button>
-					<input id="invoice-filter" placeholder="Buscar por cliente o número..." style="padding:10px 15px;border-radius:8px;border:1px solid #3bb4ff;background:#051820;color:#fff;font-size:14px;min-width:300px">
-					<div class="small" id="invoices-summary">Cargando...</div>
-				</div>
-
-				<div class="table-scroll">
+			<h3>Facturas</h3>
+			<div class="controls">
+				<button class="btn" id="btn-new-invoice">+ Nueva factura</button>
+				<input id="invoice-filter" placeholder="Buscar por cliente o número..." style="padding:10px 15px;border-radius:8px;border:1px solid #3bb4ff;background:#051820;color:#fff;font-size:14px;width:100%;max-width:300px">
+				<div class="small" id="invoices-summary">Cargando...</div>
+			</div>				<div class="table-scroll">
 					<table id="invoices-table">
 						<thead>
 							<tr>
@@ -1214,6 +1478,34 @@
 				};
 				paymentStatusSelect.addEventListener('change', updateFinanceCheckbox);
 				updateFinanceCheckbox(); // llamar al inicio
+			}
+
+			// NUEVO: Manejo del menú móvil
+			const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+			const sidebar = document.getElementById('sidebar');
+			const sidebarOverlay = document.getElementById('sidebar-overlay');
+			
+			if(mobileMenuBtn && sidebar && sidebarOverlay) {
+				// Abrir menú
+				mobileMenuBtn.addEventListener('click', () => {
+					sidebar.classList.add('show-mobile');
+					sidebarOverlay.classList.add('show');
+				});
+				
+				// Cerrar menú al hacer clic en overlay
+				sidebarOverlay.addEventListener('click', () => {
+					sidebar.classList.remove('show-mobile');
+					sidebarOverlay.classList.remove('show');
+				});
+				
+				// Cerrar menú al seleccionar una opción
+				const menuItems = sidebar.querySelectorAll('.menu li');
+				menuItems.forEach(item => {
+					item.addEventListener('click', () => {
+						sidebar.classList.remove('show-mobile');
+						sidebarOverlay.classList.remove('show');
+					});
+				});
 			}
 		}
 
