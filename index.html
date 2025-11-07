@@ -833,7 +833,6 @@
 	<div class="app">
 		<aside class="sidebar card" id="sidebar">
 			<div class="brand">Mipc Computadores</div>
-			<div id="user-info" class="small" style="color:var(--accent);margin-bottom:15px;padding:8px;background:rgba(199,255,0,.05);border-radius:6px;text-align:center"></div>
 			<ul class="menu">
 				<li class="active" data-view="dashboard">Dashboard</li>
 				<li data-view="orders">Órdenes</li>
@@ -843,8 +842,7 @@
 				<li data-view="inventory">Inventario</li>
 				<li data-view="settings">Configuración</li>
 			</ul>
-			<div style="margin-top:20px" class="small">Puedes exportar/importar desde Configuración.</div>
-			<button id="btn-logout" style="margin-top:20px;width:100%;background:#ff5b6b;color:#fff;border:0;padding:10px;border-radius:6px;cursor:pointer;font-size:14px">🚪 Cerrar Sesión</button>
+			<button id="btn-logout" style="margin-top:20px;width:100%;background:#ff5b6b;color:#fff;border:0;padding:10px;border-radius:6px;cursor:pointer;font-size:14px">Cerrar Sesión</button>
 		</aside>
 
 		<main class="main">
@@ -1762,13 +1760,6 @@
 		});
 
 		async function initApp() {
-			// Mostrar usuario logueado
-			const username = sessionStorage.getItem('username');
-			const userInfoEl = document.getElementById('user-info');
-			if(userInfoEl && username) {
-				userInfoEl.textContent = `👤 ${username}`;
-			}
-			
 			bindUI();
 			renderView('dashboard'); // Iniciar en dashboard
 			await renderDashboard(); // Cargar dashboard
