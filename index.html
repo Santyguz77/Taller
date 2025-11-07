@@ -255,11 +255,113 @@
 		}
 
 		/* ============================================
+		   ESTILOS PARA VISTA DE TARJETAS EN MÓVIL
+		   ============================================ */
+		
+		.orders-cards-container {
+			display: none; /* Oculto por defecto */
+			flex-direction: column;
+			gap: 15px;
+			margin-top: 15px;
+		}
+		
+		.order-card {
+			background: linear-gradient(135deg, #071722, #06121a);
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			border: 1px solid rgba(255,255,255,0.05);
+			position: relative;
+		}
+		
+		.order-card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 12px;
+			padding-bottom: 12px;
+			border-bottom: 1px solid rgba(255,255,255,0.08);
+		}
+		
+		.order-card-id {
+			font-size: 18px;
+			font-weight: bold;
+			color: var(--accent);
+		}
+		
+		.order-card-status {
+			display: flex;
+			gap: 6px;
+			flex-wrap: wrap;
+			align-items: center;
+		}
+		
+		.order-card-body {
+			display: grid;
+			gap: 10px;
+			margin-bottom: 12px;
+		}
+		
+		.order-card-row {
+			display: flex;
+			gap: 8px;
+		}
+		
+		.order-card-label {
+			font-weight: 600;
+			color: var(--accent);
+			min-width: 80px;
+			font-size: 13px;
+		}
+		
+		.order-card-value {
+			color: #dfeef2;
+			flex: 1;
+			font-size: 14px;
+			word-break: break-word;
+		}
+		
+		.order-card-actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			margin-top: 12px;
+			padding-top: 12px;
+			border-top: 1px solid rgba(255,255,255,0.08);
+		}
+		
+		.order-card-actions button {
+			min-height: 42px;
+			font-size: 13px;
+			padding: 10px;
+		}
+		
+		.order-card-actions select {
+			min-height: 42px;
+			font-size: 13px;
+			padding: 8px;
+			border-radius: 6px;
+			background: #052026;
+			border: 1px solid rgba(255,255,255,0.1);
+			color: #dfeef2;
+			grid-column: span 2;
+		}
+
+		/* ============================================
 		   MEJORAS RESPONSIVE PARA MÓVILES
 		   ============================================ */
 		
 		/* Ocultar sidebar en móviles y agregar menú hamburguesa */
 		@media (max-width: 768px) {
+			/* Mostrar tarjetas y ocultar tabla en móvil */
+			#orders-section .table-scroll {
+				display: none !important;
+			}
+			
+			.orders-cards-container {
+				display: flex !important;
+			}
+			
 			/* Sidebar oculto por defecto */
 			.sidebar {
 				position: fixed;
@@ -596,12 +698,16 @@
 						<tbody>
 							<!-- filas generadas por JS -->
 						</tbody>
-					</table>
-				</div>
-				<div class="footer-note" id="orders-count"></div>
-			</section>
-
-			<section id="clients-section" class="card" style="display:none;margin-top:12px">
+			</table>
+		</div>
+		
+		<!-- NUEVO: Vista de tarjetas para móvil -->
+		<div class="orders-cards-container" id="orders-cards-container">
+			<!-- Tarjetas generadas por JS -->
+		</div>
+		
+		<div class="footer-note" id="orders-count"></div>
+	</section>			<section id="clients-section" class="card" style="display:none;margin-top:12px">
 				<h3>Clientes</h3>
 				<button class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button>
 				<!-- NUEVO: envoltorio con scroll horizontal -->
@@ -1628,6 +1734,103 @@
 				if(!serial) return alert('Serie inválida');
 				openEquipmentModal(serial);
 			});
+
+			// NUEVO: Renderizar vista de tarjetas para móvil
+			const cardsContainer = $('#orders-cards-container');
+			if(cardsContainer) {
+				cardsContainer.innerHTML = '';
+				filtered.forEach(o => {
+					const client = clients.find(c=>c.id==o.clientId) || {name:'--'};
+					const statusKey = o.status || 'ingresado';
+					const statusLabel = ORDER_STATUSES[statusKey] || statusKey;
+					const statusClass = `status-${statusKey}`;
+					const imageCount = (o.images && o.images.length) ? o.images.length : 0;
+					const priceDisplay = o.price ? formatCurrency(Number(o.price)) : '--';
+					const isPaid = o.paid === true;
+					
+					const card = document.createElement('div');
+					card.className = 'order-card';
+					card.innerHTML = `
+						<div class="order-card-header">
+							<div class="order-card-id">#${o.id}</div>
+							<div class="order-card-status">
+								<span class="status-badge ${statusClass}">${statusLabel}</span>
+								<span class="payment-badge ${isPaid ? 'payment-paid' : 'payment-unpaid'}">${isPaid ? 'Pagado' : 'No pagado'}</span>
+							</div>
+						</div>
+						<div class="order-card-body">
+							<div class="order-card-row">
+								<div class="order-card-label">👤 Cliente:</div>
+								<div class="order-card-value">${escapeHtml(client.name)}</div>
+							</div>
+							<div class="order-card-row">
+								<div class="order-card-label">💻 Equipo:</div>
+								<div class="order-card-value">${escapeHtml(o.brand||'--')} ${escapeHtml(o.model||'')}</div>
+							</div>
+							<div class="order-card-row">
+								<div class="order-card-label">🔢 Serie:</div>
+								<div class="order-card-value">${escapeHtml(o.serial||'--')}</div>
+							</div>
+							${o.accessories ? `
+							<div class="order-card-row">
+								<div class="order-card-label">📦 Acces.:</div>
+								<div class="order-card-value">${escapeHtml(o.accessories)}</div>
+							</div>
+							` : ''}
+							<div class="order-card-row">
+								<div class="order-card-label">⚠️ Falla:</div>
+								<div class="order-card-value">${escapeHtml(o.failure||'No especificada')}</div>
+							</div>
+							<div class="order-card-row">
+								<div class="order-card-label">💰 Precio:</div>
+								<div class="order-card-value">${priceDisplay}</div>
+							</div>
+							${o.technician ? `
+							<div class="order-card-row">
+								<div class="order-card-label">🔧 Técnico:</div>
+								<div class="order-card-value">${escapeHtml(o.technician)}</div>
+							</div>
+							` : ''}
+							${imageCount > 0 ? `
+							<div class="order-card-row">
+								<div class="order-card-label">📸 Imágenes:</div>
+								<div class="order-card-value">${imageCount}</div>
+							</div>
+							` : ''}
+							<div class="order-card-row">
+								<div class="order-card-label">📅 Fecha:</div>
+								<div class="order-card-value">${new Date(o.date).toLocaleString()}</div>
+							</div>
+						</div>
+						<div class="order-card-actions">
+							<select class="inline-status-card" data-id="${o.id}">
+								<option value="ingresado"${statusKey==='ingresado'?' selected':''}>Ingresado</option>
+								<option value="en_reparacion"${statusKey==='en_reparacion'?' selected':''}>En reparación</option>
+								<option value="espera_entrega"${statusKey==='espera_entrega'?' selected':''}>Espera entrega</option>
+								<option value="entregado"${statusKey==='entregado'?' selected':''}>Entregado</option>
+							</select>
+							<button class="btn btn-toggle-payment-card" data-id="${o.id}" style="background:#ffa726;color:#07121a">${isPaid ? '💰 Pagado' : '💳 Pagar'}</button>
+							<button class="btn btn-edit-card" data-id="${o.id}" style="background:#3bb4ff;color:#05121a">✏️ Editar</button>
+							<button class="btn btn-pdf-card" data-id="${o.id}" style="background:#071a2a;color:#7af0a5">📄 PDF</button>
+							<button class="btn btn-whatsapp-card" data-id="${o.id}" style="background:#25D366;color:#06121a">📱 WhatsApp</button>
+							<button class="btn btn-copy-link-card" data-id="${o.id}" style="background:#9c27b0;color:#fff">🔗 Link</button>
+							<button class="btn btn-delete-card" data-id="${o.id}" style="background:#ff5b6b;color:#fff">🗑️ Eliminar</button>
+						</div>
+					`;
+					cardsContainer.appendChild(card);
+				});
+				
+				// Bindings para tarjetas
+				$$('.btn-edit-card').forEach(b=>b.onclick = ()=> openOrderModal(b.dataset.id));
+				$$('.btn-delete-card').forEach(b=>b.onclick = async ()=> { if(confirm('¿Eliminar orden?')) await deleteOrder(b.dataset.id) });
+				$$('select.inline-status-card').forEach(s=>{
+					s.onchange = async ()=> await updateOrderStatus(s.dataset.id, s.value);
+				});
+				$$('.btn-toggle-payment-card').forEach(b => b.onclick = async ()=> await toggleOrderPayment(b.dataset.id));
+				$$('.btn-pdf-card').forEach(b => b.onclick = ()=> exportOrderPDF(b.dataset.id));
+				$$('.btn-whatsapp-card').forEach(b => b.onclick = ()=> openWhatsApp(b.dataset.id));
+				$$('.btn-copy-link-card').forEach(b => b.onclick = async ()=> await copyPublicLink(b.dataset.id));
+			}
 
 			$('#orders-count').textContent = `Mostrando ${filtered.length} registros`;
 			// actualizar métricas cuando se renderizan órdenes
