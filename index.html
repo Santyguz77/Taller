@@ -4329,6 +4329,7 @@
 			const inventory = await loadInventory();
 			const invoices = await loadInvoices();
 			const clients = await loadClients();
+			const movements = await loadInventoryMovements();
 
 			// Calcular métricas
 			const totalOrders = orders.length;
@@ -4374,7 +4375,7 @@
 			renderOrdersStatusChart(orders);
 			renderFinancialChart(transactions);
 			renderOrdersTimelineChart(orders);
-			renderTopProductsChart(orders);
+			renderTopProductsChart(inventory, movements);
 		}
 
 		function renderOrdersStatusChart(orders) {
@@ -4597,13 +4598,23 @@
 			});
 		}
 
-		function renderTopProductsChart(orders) {
-			// Contar marcas/modelos más frecuentes
+		function renderTopProductsChart(inventory, movements) {
+			// Contar salidas por producto del inventario
 			const productCounts = {};
 
-			orders.forEach(o => {
-				const product = `${o.brand || ''} ${o.model || ''}`.trim() || 'Sin especificar';
-				productCounts[product] = (productCounts[product] || 0) + 1;
+			// Filtrar solo movimientos de salida (out)
+			const outMovements = movements.filter(m => m.type === 'out');
+
+			outMovements.forEach(m => {
+				const itemId = m.itemId;
+				const quantity = Number(m.quantity || 0);
+				
+				// Buscar el item en el inventario
+				const item = inventory.find(i => i.id === itemId);
+				if(item) {
+					const productName = item.name || 'Sin nombre';
+					productCounts[productName] = (productCounts[productName] || 0) + quantity;
+				}
 			});
 
 			// Ordenar y tomar top 5
@@ -4611,8 +4622,9 @@
 				.sort((a, b) => b[1] - a[1])
 				.slice(0, 5);
 
-			const labels = sorted.map(([product]) => product);
-			const data = sorted.map(([, count]) => count);
+			// Si no hay datos, mostrar mensaje
+			const labels = sorted.length > 0 ? sorted.map(([product]) => product) : ['Sin ventas aún'];
+			const data = sorted.length > 0 ? sorted.map(([, count]) => count) : [0];
 
 			const ctx = document.getElementById('topProductsChart');
 			if(!ctx) return;
@@ -4624,7 +4636,7 @@
 				data: {
 					labels: labels,
 					datasets: [{
-						label: 'Cantidad de reparaciones',
+						label: 'Unidades vendidas',
 						data: data,
 						backgroundColor: [
 							'#3bb4ff',
