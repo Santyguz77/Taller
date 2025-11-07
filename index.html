@@ -347,22 +347,103 @@
 			grid-column: span 2;
 		}
 
+		/* Estilos para tarjetas genéricas (clientes, facturas, inventario, finanzas) */
+		.cards-container {
+			display: none;
+			flex-direction: column;
+			gap: 15px;
+			margin-top: 15px;
+		}
+		
+		.data-card {
+			background: linear-gradient(135deg, #071722, #06121a);
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			border: 1px solid rgba(255,255,255,0.05);
+			position: relative;
+		}
+		
+		.data-card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 12px;
+			padding-bottom: 12px;
+			border-bottom: 1px solid rgba(255,255,255,0.08);
+		}
+		
+		.data-card-title {
+			font-size: 18px;
+			font-weight: bold;
+			color: var(--accent);
+		}
+		
+		.data-card-subtitle {
+			font-size: 13px;
+			color: var(--muted);
+			margin-top: 4px;
+		}
+		
+		.data-card-body {
+			display: grid;
+			gap: 10px;
+			margin-bottom: 12px;
+		}
+		
+		.data-card-row {
+			display: flex;
+			gap: 8px;
+		}
+		
+		.data-card-label {
+			font-weight: 600;
+			color: var(--accent);
+			min-width: 80px;
+			font-size: 13px;
+		}
+		
+		.data-card-value {
+			color: #dfeef2;
+			flex: 1;
+			font-size: 14px;
+			word-break: break-word;
+		}
+		
+		.data-card-actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			margin-top: 12px;
+			padding-top: 12px;
+			border-top: 1px solid rgba(255,255,255,0.08);
+		}
+		
+		.data-card-actions button {
+			min-height: 42px;
+			font-size: 13px;
+			padding: 10px;
+		}
+
 		/* ============================================
 		   MEJORAS RESPONSIVE PARA MÓVILES
 		   ============================================ */
 		
-		/* Ocultar sidebar en móviles y agregar menú hamburguesa */
-		@media (max-width: 768px) {
-			/* Mostrar tarjetas y ocultar tabla en móvil */
-			#orders-section .table-scroll {
-				display: none !important;
-			}
-			
-			.orders-cards-container {
-				display: flex !important;
-			}
-			
-			/* Sidebar oculto por defecto */
+	/* Ocultar sidebar en móviles y agregar menú hamburguesa */
+	@media (max-width: 768px) {
+		/* Mostrar tarjetas y ocultar tablas en móvil para todas las secciones */
+		#orders-section .table-scroll,
+		#clients-section .table-scroll,
+		#invoices-section .table-scroll,
+		#inventory-section .table-scroll,
+		#finance-section .table-scroll {
+			display: none !important;
+		}
+		
+		.orders-cards-container,
+		.cards-container {
+			display: flex !important;
+		}			/* Sidebar oculto por defecto */
 			.sidebar {
 				position: fixed;
 				left: -260px;
@@ -712,14 +793,17 @@
 				<button class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button>
 				<!-- NUEVO: envoltorio con scroll horizontal -->
 				<div class="table-scroll">
-					<table id="clients-table">
-						<thead><tr><th>ID</th><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
-						<tbody></tbody>
-					</table>
-				</div>
-			</section>
-
-			<!-- Nueva sección: Finanzas -->
+			<table id="clients-table">
+				<thead><tr><th>ID</th><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead>
+				<tbody></tbody>
+			</table>
+		</div>
+		
+		<!-- Vista de tarjetas para móvil -->
+		<div class="cards-container" id="clients-cards-container">
+			<!-- Tarjetas generadas por JS -->
+		</div>
+	</section>			<!-- Nueva sección: Finanzas -->
 			<section id="finance-section" class="card" style="display:none;margin-top:12px">
 				<h3>Finanzas</h3>
 				<!-- Panel métricas -->
@@ -764,14 +848,17 @@
 
 				<!-- NUEVO: envoltorio con scroll horizontal -->
 				<div class="table-scroll">
-					<table id="transactions-table">
-						<thead><tr><th>ID</th><th>Tipo</th><th>Monto</th><th>Categoría</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
-						<tbody></tbody>
-					</table>
-				</div>
-			</section>
-
-			<!-- NUEVO: Sección Inventario -->
+			<table id="transactions-table">
+				<thead><tr><th>ID</th><th>Tipo</th><th>Monto</th><th>Categoría</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
+				<tbody></tbody>
+			</table>
+		</div>
+		
+		<!-- Vista de tarjetas para móvil -->
+		<div class="cards-container" id="transactions-cards-container">
+			<!-- Tarjetas generadas por JS -->
+		</div>
+	</section>			<!-- NUEVO: Sección Inventario -->
 			<section id="inventory-section" class="card" style="display:none;margin-top:12px">
 				<h3>Inventario</h3>
 				<div class="controls">
@@ -798,6 +885,11 @@
 						<tbody></tbody>
 					</table>
 				</div>
+
+				<!-- Vista de tarjetas para móvil -->
+				<div class="cards-container" id="inventory-cards-container">
+					<!-- Tarjetas generadas por JS -->
+				</div>
 			</section>
 
 			<!-- NUEVO: Sección Facturas -->
@@ -823,6 +915,11 @@
 						</thead>
 						<tbody></tbody>
 					</table>
+				</div>
+
+				<!-- Vista de tarjetas para móvil -->
+				<div class="cards-container" id="invoices-cards-container">
+					<!-- Tarjetas generadas por JS -->
 				</div>
 			</section>
 
@@ -2404,6 +2501,35 @@
 			});
 			$$('#clients-table .btn-edit').forEach(b=>b.onclick = ()=> openClientModal(b.dataset.id));
 			$$('#clients-table .btn-delete').forEach(b=>b.onclick = async ()=> { if(confirm('Eliminar cliente?')) await deleteClient(b.dataset.id) });
+
+			// Renderizar tarjetas para móvil
+			const cardsContainer = $('#clients-cards-container');
+			if(cardsContainer){
+				cardsContainer.innerHTML = '';
+				items.forEach(c=>{
+					const card = document.createElement('div');
+					card.className = 'data-card';
+					card.innerHTML = `
+						<div class="data-card-header">
+							<h4>👤 ${escapeHtml(c.name)}</h4>
+							<span class="badge" style="background:#3bb4ff">ID: ${c.id}</span>
+						</div>
+						<div class="data-card-body">
+							${c.cedula ? `<div class="data-card-row"><span class="label">🪪 Cédula:</span><span class="value">${escapeHtml(c.cedula)}</span></div>` : ''}
+							${c.phone ? `<div class="data-card-row"><span class="label">📞 Teléfono:</span><span class="value">${escapeHtml(c.phone)}</span></div>` : ''}
+							${c.email ? `<div class="data-card-row"><span class="label">📧 Email:</span><span class="value">${escapeHtml(c.email)}</span></div>` : ''}
+						</div>
+						<div class="data-card-actions">
+							<button class="btn btn-edit card-btn-edit" data-id="${c.id}">✏️ Editar</button>
+							<button class="btn btn-delete card-btn-delete" data-id="${c.id}">🗑️ Eliminar</button>
+						</div>
+					`;
+					cardsContainer.appendChild(card);
+				});
+				$$('#clients-cards-container .card-btn-edit').forEach(b=>b.onclick = ()=> openClientModal(b.dataset.id));
+				$$('#clients-cards-container .card-btn-delete').forEach(b=>b.onclick = async ()=> { if(confirm('¿Eliminar cliente?')) await deleteClient(b.dataset.id) });
+			}
+
 			// actualizar métricas al renderizar clientes
 			await computeMetrics();
 		}
@@ -2981,6 +3107,37 @@
 				tbody.appendChild(tr);
 			});
 			$$('#transactions-table .btn-delete').forEach(b=> b.onclick = async ()=> { if(confirm('Eliminar transacción?')) await deleteTransaction(b.dataset.id) });
+
+			// Renderizar tarjetas para móvil
+			const cardsContainer = $('#transactions-cards-container');
+			if(cardsContainer){
+				cardsContainer.innerHTML = '';
+				filtered.forEach(t=>{
+					const isIncome = t.type === 'income';
+					const typeColor = isIncome ? '#7af0a5' : '#ff6b6b';
+					const typeIcon = isIncome ? '💵' : '💸';
+					const typeText = isIncome ? 'Ingreso' : 'Gasto';
+					const card = document.createElement('div');
+					card.className = 'data-card';
+					card.innerHTML = `
+						<div class="data-card-header">
+							<h4>${typeIcon} ${formatCurrency(Number(t.amount||0))}</h4>
+							<span class="badge" style="background:${typeColor};color:#04121a">${typeText}</span>
+						</div>
+						<div class="data-card-body">
+							<div class="data-card-row"><span class="label">🏷️ Categoría:</span><span class="value">${escapeHtml(t.category||'')}</span></div>
+							<div class="data-card-row"><span class="label">📅 Fecha:</span><span class="value">${t.date || ''}</span></div>
+							${t.notes ? `<div class="data-card-row"><span class="label">📝 Notas:</span><span class="value">${escapeHtml(t.notes)}</span></div>` : ''}
+						</div>
+						<div class="data-card-actions">
+							<button class="btn btn-delete card-btn-delete" data-id="${t.id}">🗑️ Eliminar</button>
+						</div>
+					`;
+					cardsContainer.appendChild(card);
+				});
+				$$('#transactions-cards-container .card-btn-delete').forEach(b=> b.onclick = async ()=> { if(confirm('¿Eliminar transacción?')) await deleteTransaction(b.dataset.id) });
+			}
+
 			const summary = $('#finance-summary');
 			const balance = totalIncome - totalExpense;
 			if(summary) summary.textContent = `Ingresos: ${formatCurrency(totalIncome)} — Gastos: ${formatCurrency(totalExpense)} — Saldo: ${formatCurrency(balance)}`;
@@ -3058,11 +3215,7 @@
 				tbody.appendChild(tr);
 			});
 
-			// resumen
-			const sum = document.getElementById('inventory-summary');
-			if(sum) sum.textContent = `Ítems: ${filtered.length} — Unidades: ${totalUnits} — Valor (costo): ${formatCurrency(totalValue)}`;
-
-			// acciones
+			// acciones tabla
 			tbody.querySelectorAll('button').forEach(btn=>{
 				const id = btn.getAttribute('data-id');
 				const act = btn.getAttribute('data-act');
@@ -3072,6 +3225,51 @@
 				if(act==='out') btn.onclick = ()=> openMovementModal(id, 'out');
 				if(act==='hist') btn.onclick = ()=> openMovementsHistory(id);
 			});
+
+			// Renderizar tarjetas para móvil
+			const cardsContainer = $('#inventory-cards-container');
+			if(cardsContainer){
+				cardsContainer.innerHTML = '';
+				filtered.forEach(item=>{
+					const stock = Number(item.stock||0);
+					const unitCost = Number(item.unitCost||0);
+					const unitPrice = Number(item.unitPrice||0);
+					const stockColor = stock > 5 ? '#7af0a5' : (stock > 0 ? '#ffcc33' : '#ff6b6b');
+					const card = document.createElement('div');
+					card.className = 'data-card';
+					card.innerHTML = `
+						<div class="data-card-header">
+							<h4>📦 ${escapeHtml(item.name||'')}</h4>
+							<span class="badge" style="background:#64707a">${escapeHtml(item.category||'')}</span>
+						</div>
+						<div class="data-card-body">
+							<div class="data-card-row"><span class="label">📊 Stock:</span><span class="value" style="color:${stockColor};font-weight:bold">${stock} unidades</span></div>
+							${unitCost ? `<div class="data-card-row"><span class="label">💵 Costo:</span><span class="value">${formatCurrency(unitCost)}</span></div>` : ''}
+							${unitPrice ? `<div class="data-card-row"><span class="label">💰 Precio:</span><span class="value">${formatCurrency(unitPrice)}</span></div>` : ''}
+							${item.supplier ? `<div class="data-card-row"><span class="label">🏭 Proveedor:</span><span class="value">${escapeHtml(item.supplier)}</span></div>` : ''}
+							${item.updatedAt ? `<div class="data-card-row"><span class="label">🕐 Actualizado:</span><span class="value">${new Date(item.updatedAt).toLocaleString()}</span></div>` : ''}
+						</div>
+						<div class="data-card-actions">
+							<button class="btn card-btn-in" data-id="${item.id}" style="background:#7af0a5;color:#04121a">⬆️ Entrada</button>
+							<button class="btn card-btn-out" data-id="${item.id}" style="background:#ffcc33;color:#04121a">⬇️ Salida</button>
+							<button class="btn btn-edit card-btn-edit" data-id="${item.id}">✏️ Editar</button>
+							<button class="btn btn-delete card-btn-del" data-id="${item.id}">🗑️ Eliminar</button>
+							<button class="btn card-btn-hist" data-id="${item.id}" style="background:#3bb4ff;color:#04121a">📜 Historial</button>
+						</div>
+					`;
+					cardsContainer.appendChild(card);
+				});
+				// Acciones tarjetas
+				$$('#inventory-cards-container .card-btn-edit').forEach(btn=> btn.onclick = ()=> openInventoryItemModal(btn.dataset.id));
+				$$('#inventory-cards-container .card-btn-del').forEach(btn=> btn.onclick = async ()=> { if(confirm('¿Eliminar ítem?')) await deleteInventoryItem(btn.dataset.id); });
+				$$('#inventory-cards-container .card-btn-in').forEach(btn=> btn.onclick = ()=> openMovementModal(btn.dataset.id, 'in'));
+				$$('#inventory-cards-container .card-btn-out').forEach(btn=> btn.onclick = ()=> openMovementModal(btn.dataset.id, 'out'));
+				$$('#inventory-cards-container .card-btn-hist').forEach(btn=> btn.onclick = ()=> openMovementsHistory(btn.dataset.id));
+			}
+
+			// resumen
+			const sum = document.getElementById('inventory-summary');
+			if(sum) sum.textContent = `Ítems: ${filtered.length} — Unidades: ${totalUnits} — Valor (costo): ${formatCurrency(totalValue)}`;
 		}
 
 		// Abrir modal para crear/editar ítem
@@ -3471,10 +3669,7 @@
 				tbody.appendChild(tr);
 			});
 
-			const sum = document.getElementById('invoices-summary');
-			if(sum) sum.textContent = `Facturas: ${filtered.length} — Pagadas: ${paidCount} — Total facturado: ${formatCurrency(totalAmount)}`;
-
-			// acciones
+			// acciones tabla
 			tbody.querySelectorAll('button').forEach(btn=>{
 				const id = btn.getAttribute('data-id');
 				const act = btn.getAttribute('data-act');
@@ -3482,6 +3677,62 @@
 				if(act==='del') btn.onclick = async ()=> { if(confirm('Eliminar factura?')) await deleteInvoice(id); };
 				if(act==='pdf') btn.onclick = async ()=> await exportInvoicePDF(id);
 			});
+
+			// Renderizar tarjetas para móvil
+			const cardsContainer = $('#invoices-cards-container');
+			if(cardsContainer){
+				cardsContainer.innerHTML = '';
+				filtered.forEach(inv=>{
+					const client = clients.find(c=>c.id===inv.clientId) || {name:'--'};
+					const subtotal = Number(inv.subtotal || 0);
+					const tax = Number(inv.tax || 0);
+					const total = Number(inv.total || 0);
+					
+					let statusBadge, statusColor, statusIcon;
+					if(inv.paymentStatus === 'paid'){
+						statusBadge = 'Pagada';
+						statusColor = '#7af0a5';
+						statusIcon = '✅';
+					} else if(inv.paymentStatus === 'partial'){
+						statusBadge = 'Pago parcial';
+						statusColor = '#ffcc33';
+						statusIcon = '⚠️';
+					} else {
+						statusBadge = 'No pagada';
+						statusColor = '#ff6b6b';
+						statusIcon = '❌';
+					}
+
+					const card = document.createElement('div');
+					card.className = 'data-card';
+					card.innerHTML = `
+						<div class="data-card-header">
+							<h4>🧾 ${escapeHtml(inv.invoiceNumber||'')}</h4>
+							<span class="badge" style="background:${statusColor};color:#04121a">${statusIcon} ${statusBadge}</span>
+						</div>
+						<div class="data-card-body">
+							<div class="data-card-row"><span class="label">👤 Cliente:</span><span class="value">${escapeHtml(client.name)}</span></div>
+							<div class="data-card-row"><span class="label">📅 Fecha:</span><span class="value">${inv.date || ''}</span></div>
+							<div class="data-card-row"><span class="label">📄 Subtotal:</span><span class="value">${formatCurrency(subtotal)}</span></div>
+							<div class="data-card-row"><span class="label">🧾 IVA:</span><span class="value">${formatCurrency(tax)}</span></div>
+							<div class="data-card-row"><span class="label">💰 Total:</span><span class="value" style="font-weight:bold;font-size:1.1em;color:#7af0a5">${formatCurrency(total)}</span></div>
+						</div>
+						<div class="data-card-actions">
+							<button class="btn card-btn-pdf" data-id="${inv.id}" style="background:#7af0a5;color:#04121a">📄 PDF</button>
+							<button class="btn btn-edit card-btn-edit" data-id="${inv.id}">✏️ Editar</button>
+							<button class="btn btn-delete card-btn-del" data-id="${inv.id}">🗑️ Eliminar</button>
+						</div>
+					`;
+					cardsContainer.appendChild(card);
+				});
+				// Acciones tarjetas
+				$$('#invoices-cards-container .card-btn-edit').forEach(btn=> btn.onclick = ()=> openInvoiceModal(btn.dataset.id));
+				$$('#invoices-cards-container .card-btn-del').forEach(btn=> btn.onclick = async ()=> { if(confirm('¿Eliminar factura?')) await deleteInvoice(btn.dataset.id); });
+				$$('#invoices-cards-container .card-btn-pdf').forEach(btn=> btn.onclick = async ()=> await exportInvoicePDF(btn.dataset.id));
+			}
+
+			const sum = document.getElementById('invoices-summary');
+			if(sum) sum.textContent = `Facturas: ${filtered.length} — Pagadas: ${paidCount} — Total facturado: ${formatCurrency(totalAmount)}`;
 		}
 
 		/* NUEVO: abrir modal de factura */
