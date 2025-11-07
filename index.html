@@ -14,7 +14,6 @@
 	<link rel="manifest" href="/manifest.json">
 	<link rel="icon" type="image/png" href="/icon-192.png">
 	<link rel="apple-touch-icon" href="/icon-192.png">
-	<link rel="stylesheet" href="./mobile-styles.css">
 	
 	<title>Mipc Computadores</title>
 	<style>
@@ -1567,17 +1566,17 @@
 				doc.text(urlLines, centerX - lineWidth/2, y);
 			}
 			
-			// Footer
-			y = pageHeight - margin;
-			doc.setFontSize(8);
-			doc.setFont(undefined, 'italic');
-			const footerText = 'Mipc Computadores - Servicio Técnico Especializado';
-			const footerWidth = doc.getTextWidth(footerText);
-			doc.text(footerText, centerX - footerWidth/2, y);
+		// Footer
+		y = pageHeight - margin;
+		doc.setFontSize(8);
+		doc.setFont(undefined, 'italic');
+		const footerText = 'Mipc Computadores - Servicio Técnico Especializado';
+		const footerWidth = doc.getTextWidth(footerText);
+		doc.text(footerText, centerX - footerWidth/2, y);
 
-			doc.save(`orden_${order.id}.pdf`);
-
-			function wrapText(text, maxChars){
+		// Abrir PDF en nueva pestaña para previsualización
+		const pdfBlob = doc.output('bloburl');
+		window.open(pdfBlob, '_blank');			function wrapText(text, maxChars){
 				if(!text) return '';
 				if(text.length <= maxChars) return text;
 				const words = text.split(' ');
@@ -2104,7 +2103,9 @@
 				printRow(row);
 			});
 
-			doc.save('ordenes_mipc.pdf');
+			// Abrir PDF en nueva pestaña para previsualización
+			const pdfBlob = doc.output('bloburl');
+			window.open(pdfBlob, '_blank');
 
 			function truncateText(str, maxChars){
 				if(!str) return '';
@@ -2326,21 +2327,21 @@
 				doc.text(notesLines, margin, y);
 			}
 
-			// Footer
-			y = 750;
-			doc.setFontSize(8);
-			doc.setFont(undefined, 'italic');
-			const footerText = 'Gracias por su compra - Mipc Computadores';
-			const footerWidth = doc.getTextWidth(footerText);
-			doc.text(footerText, centerX - footerWidth/2, y);
+		// Footer
+		y = 750;
+		doc.setFontSize(8);
+		doc.setFont(undefined, 'italic');
+		const footerText = 'Gracias por su compra - Mipc Computadores';
+		const footerWidth = doc.getTextWidth(footerText);
+		doc.text(footerText, centerX - footerWidth/2, y);
 
-			doc.save(`factura_${invoice.invoiceNumber}.pdf`);
-		}
+		// Abrir PDF en nueva pestaña para previsualización
+		const pdfBlob = doc.output('bloburl');
+		window.open(pdfBlob, '_blank');
+	}
 
-		// helpers
-		function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
-
-	// Modal: ver hoja de vida del equipo
+	// helpers
+	function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }	// Modal: ver hoja de vida del equipo
 	async function openEquipmentModal(serial){
 		$('#modal-equipment-title').textContent = `Hoja de vida - ${serial}`;
 		const container = $('#equipment-history');
@@ -3326,7 +3327,9 @@
 			const footerWidth = doc.getTextWidth(footerText);
 			doc.text(footerText, centerX - footerWidth/2, y);
 
-			doc.save(`factura_${invoice.invoiceNumber}.pdf`);
+			// Abrir PDF en nueva pestaña para previsualización
+			const pdfBlob = doc.output('bloburl');
+			window.open(pdfBlob, '_blank');
 		}
 	</script>
 </body>
