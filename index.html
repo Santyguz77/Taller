@@ -1,8 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<!-- PWA Meta Tags -->
+	<meta name="theme-color" content="#c7ff00">
+	<meta name="description" content="Sistema de gestión para MIPC Computadores - Órdenes, facturas e inventario">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="MIPC Taller">
+	<link rel="manifest" href="/manifest.json">
+	<link rel="icon" type="image/png" href="/icon-192.png">
+	<link rel="apple-touch-icon" href="/icon-192.png">
+	<link rel="stylesheet" href="./mobile-styles.css">
+	
 	<title>Mipc Computadores</title>
 	<style>
 		:root{
@@ -504,16 +517,14 @@
 				</div>
 
 				<!-- nuevo: campo para imágenes -->
-				<div class="form-row" style="flex-direction:column;align-items:flex-start">
-					<label style="color:var(--muted);font-size:13px;margin-bottom:4px">
-						Imágenes del equipo: 
-						<span id="image-count" style="color:var(--accent);font-weight:600">(0 imágenes)</span>
-					</label>
-					<input type="file" id="order-images" accept="image/*" multiple style="padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
-					<div id="image-preview-container" class="image-preview-container"></div>
-				</div>
-
-				<div style="display:flex;gap:8px;justify-content:flex-end">
+			<div class="form-row" style="flex-direction:column;align-items:flex-start">
+				<label style="color:var(--muted);font-size:13px;margin-bottom:4px">
+					Imágenes del equipo: 
+					<span id="image-count" style="color:var(--accent);font-weight:600">(0 imágenes)</span>
+				</label>
+				<input type="file" id="order-images" accept="image/*" capture="environment" multiple style="padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+				<div id="image-preview-container" class="image-preview-container"></div>
+			</div>				<div style="display:flex;gap:8px;justify-content:flex-end">
 					<button type="button" class="btn" id="btn-close-order" style="background:#64707a">Cancelar</button>
 					<button type="submit" class="btn">Guardar orden</button>
 				</div>
@@ -1007,13 +1018,34 @@
 			}
 		}
 
-		// init
-		document.addEventListener('DOMContentLoaded', async ()=> {
-			// NUEVO: Verificar autenticación
-			const loginScreen = document.getElementById('login-screen');
-			const appContainer = document.querySelector('.app');
-			
-			if (!checkAuth()) {
+	// init
+	document.addEventListener('DOMContentLoaded', async ()=> {
+		// NUEVO: Registrar Service Worker para PWA
+		if ('serviceWorker' in navigator) {
+			try {
+				const registration = await navigator.serviceWorker.register('/service-worker.js');
+				console.log('✅ Service Worker registrado:', registration.scope);
+				
+				// Actualizar SW cuando haya una nueva versión
+				registration.addEventListener('updatefound', () => {
+					const newWorker = registration.installing;
+					console.log('🔄 Nueva versión del Service Worker disponible');
+					
+					newWorker.addEventListener('statechange', () => {
+						if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+							// Mostrar notificación de actualización disponible
+							console.log('✨ Actualización lista. Recarga la página para aplicarla.');
+						}
+					});
+				});
+			} catch (err) {
+				console.error('❌ Error al registrar Service Worker:', err);
+			}
+		}
+
+		// NUEVO: Verificar autenticación
+		const loginScreen = document.getElementById('login-screen');
+		const appContainer = document.querySelector('.app');			if (!checkAuth()) {
 				// Mostrar login y ocultar app
 				loginScreen.classList.remove('hidden');
 				appContainer.style.display = 'none';
