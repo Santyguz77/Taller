@@ -891,7 +891,16 @@
 					Imágenes del equipo: 
 					<span id="image-count" style="color:var(--accent);font-weight:600">(0 imágenes)</span>
 				</label>
-				<input type="file" id="order-images" accept="image/*" capture="environment" multiple style="padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+				<div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
+					<button type="button" id="btn-take-photo" class="btn" style="background:#3bb4ff;color:#05121a;flex:1;min-width:150px">
+						📷 Tomar Foto
+					</button>
+					<button type="button" id="btn-choose-gallery" class="btn" style="background:#9c27b0;color:#fff;flex:1;min-width:150px">
+						🖼️ Galería
+					</button>
+				</div>
+				<input type="file" id="order-images-camera" accept="image/*" capture="environment" multiple style="display:none">
+				<input type="file" id="order-images-gallery" accept="image/*" multiple style="display:none">
 				<div id="image-preview-container" class="image-preview-container"></div>
 			</div>				<div style="display:flex;gap:8px;justify-content:flex-end">
 					<button type="button" class="btn" id="btn-close-order" style="background:#64707a">Cancelar</button>
@@ -1509,7 +1518,20 @@
 			if(formMove) formMove.addEventListener('submit', async (e)=> await saveMovementFromForm(e));
 
 			// nuevo: manejo de imágenes
-			$('#order-images').addEventListener('change', handleImageUpload);
+			const btnTakePhoto = $('#btn-take-photo');
+			const btnChooseGallery = $('#btn-choose-gallery');
+			const inputCamera = $('#order-images-camera');
+			const inputGallery = $('#order-images-gallery');
+			
+			if(btnTakePhoto && inputCamera) {
+				btnTakePhoto.addEventListener('click', () => inputCamera.click());
+				inputCamera.addEventListener('change', handleImageUpload);
+			}
+			
+			if(btnChooseGallery && inputGallery) {
+				btnChooseGallery.addEventListener('click', () => inputGallery.click());
+				inputGallery.addEventListener('change', handleImageUpload);
+			}
 
 			$('#filter-input').addEventListener('input', async ()=> await renderOrders());
 			$('#status-filter').addEventListener('change', async ()=> await renderOrders());
@@ -2120,7 +2142,10 @@
 			// limpiar imágenes previas
 			currentOrderImages = [];
 			$('#image-preview-container').innerHTML = '';
-			$('#order-images').value = '';
+			const inputCamera = $('#order-images-camera');
+			const inputGallery = $('#order-images-gallery');
+			if(inputCamera) inputCamera.value = '';
+			if(inputGallery) inputGallery.value = '';
 
 			if(id){
 				const item = (await loadOrders()).find(x=>x.id==id);
