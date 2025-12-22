@@ -1526,6 +1526,13 @@
 
 		async function saveTable(table, data) {
 			try{
+				// 🛡️ PROTECCIÓN: Validar que no se intente guardar array vacío en tablas críticas
+				const CRITICAL_TABLES = ['clients', 'orders', 'invoices'];
+				if(CRITICAL_TABLES.includes(table) && (!data || data.length === 0)){
+					console.warn(`⚠️ BLOQUEADO: Intento de guardar array vacío en tabla crítica: ${table}`);
+					throw new Error(`No se puede vaciar la tabla ${table}. Si esto es intencional, contacta al administrador.`);
+				}
+				
 				console.log(`Guardando ${table}, registros: ${data.length}, con timeout de ${API_SAVE_TIMEOUT_MS}ms`);
 				
 				// Calcular tamaño aproximado de los datos
@@ -4674,6 +4681,4 @@
 		}
 	</script>
 </body>
-
 </html>
-
