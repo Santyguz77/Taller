@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Historial de Equipo - Mipc Computadores</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#A3E635">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/icon-192.png">
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#A3E635", primary_hover: "#84CC16",
+                        "background-light": "#F3F4F6",
+                        "background-dark": "#0B1120", "surface-light": "#FFFFFF",
+                        "surface-dark": "#151F32", "card-dark": "#1E293B",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem",
+                        'xl': "1rem",
+                        '2xl': "1.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 19px;
+            width: 2px;
+            background: #334155;
+            z-index: 0;
+        }
+
+        body {
+            min-height: max(884px, 100dvh);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(2, 6, 8, 0.92);
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-overlay img {
+            max-width: 92%;
+            max-height: 92%;
+            border-radius: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(163, 230, 53, 0.2);
+            border-top-color: #A3E635;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @media print {
+
+            header,
+            footer,
+            .fab-btn,
+            .modal-overlay,
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            * {
+                color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="font-sans antialiased bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 min-h-screen transition-colors duration-300">
+    <div class="max-w-2xl mx-auto min-h-screen relative pb-10">
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-50 bg-surface-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <img src="/icon-192.png" alt="Mipc" class="w-9 h-9 rounded-lg">
+                <div class="h-8 w-[1px] bg-gray-300 dark:bg-slate-700"></div>
+                <h1 class="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Historial
+                    de Equipo</h1>
+            </div>
+            <div class="flex items-center space-x-1 no-print">
+                <button onclick="shareLink()"
+                    class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400"
+                    title="Compartir enlace">
+                    <span class="material-icons-round text-xl">share</span>
+                </button>
+                <button onclick="window.print()"
+                    class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400"
+                    title="Descargar / Imprimir">
+                    <span class="material-icons-round text-xl">download</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="px-5 pt-6 space-y-6" id="content">
+            <div class="text-center py-16 space-y-3">
+                <div class="spinner"></div>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Cargando historial del equipo...</p>
+            </div>
+        </main>
+
+        <!-- Contact Card -->
+        <div class="px-5 mt-8 no-print" id="contact-card" style="display:none">
+            <div
+                class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+                <div class="flex items-center space-x-2 mb-4">
+                    <span class="material-icons-round text-primary text-xl">support_agent</span>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white">¿Necesitas ayuda?</h3>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Contáctanos para consultas sobre el estado de
+                    tu equipo.</p>
+                <div class="flex gap-3">
+                    <a href="https://wa.me/573202307508" target="_blank"
+                        class="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold py-3 rounded-xl transition-colors shadow-sm">
+                        <span class="material-icons-round text-lg">chat</span>
+                        WhatsApp
+                    </a>
+                    <a href="tel:+573202307508"
+                        class="flex-1 flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold py-3 rounded-xl transition-colors border border-gray-200 dark:border-slate-700">
+                        <span class="material-icons-round text-lg">call</span>
+                        Llamar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center py-6 px-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <img src="/icon-192.png" alt="Mipc" class="w-5 h-5 rounded">
+                <p class="text-xs text-slate-400 dark:text-slate-500">
+                    <span class="text-primary font-bold">Mipc Computadores</span> — Servicio Técnico Especializado
+                </p>
+            </div>
+            <p class="text-[10px] text-slate-400 dark:text-slate-600">
+                Este enlace muestra el historial público de tu equipo.
+            </p>
+        </footer>
+
+        <!-- WhatsApp FAB -->
+        <a href="https://wa.me/573202307508" target="_blank"
+            class="fab-btn fixed bottom-6 right-6 w-14 h-14 bg-emerald-500 text-white rounded-full shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-110 transition-transform z-50">
+            <span class="material-icons-round text-2xl">chat</span>
+        </a>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal-overlay" id="image-modal">
+        <button onclick="closeImageModal()"
+            class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors z-50">✕
+            Cerrar</button>
+        <img id="modal-image" src="" alt="Imagen ampliada">
+    </div>
+
+    <script>
+        // Dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+
+        const API_URL = "https://casinos-bunny-edited-officers.trycloudflare.com/api";
+
+        const ORDER_STATUSES = {
+            ingresado: 'Ingresado',
+            en_reparacion: 'En reparación',
+            espera_entrega: 'En espera de entrega',
+            entregado: 'Entregado'
+        };
+
+        const STATUS_CLASSES = {
+            ingresado: 'bg-primary text-slate-900',
+            en_reparacion: 'bg-blue-400 text-white',
+            espera_entrega: 'bg-yellow-400 text-slate-900',
+            entregado: 'bg-emerald-400 text-slate-900'
+        };
+
+        const STATUS_STEPS = ['ingresado', 'en_reparacion', 'espera_entrega', 'entregado'];
+        const STATUS_LABELS = ['Ingresado', 'En reparación', 'Espera entrega', 'Entregado'];
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        }
+
+        function formatCurrency(v) {
+            try {
+                return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
+            } catch (e) {
+                return '$' + (v || 0).toFixed(0);
+            }
+        }
+
+        function buildProgressBar(statusKey) {
+            const currentIdx = STATUS_STEPS.indexOf(statusKey);
+            let html = '<div class="flex items-center w-full gap-1">';
+            STATUS_STEPS.forEach((step, i) => {
+                const done = i <= currentIdx;
+                const isCurrent = i === currentIdx;
+                const dotClass = done
+                    ? (isCurrent ? 'bg-primary ring-4 ring-primary/20 shadow-[0_0_10px_rgba(163,230,53,0.5)]' : 'bg-primary')
+                    : 'bg-slate-300 dark:bg-slate-600';
+                const lineClass = i <= currentIdx ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600';
+                const textClass = done ? 'text-primary font-semibold' : 'text-slate-400 dark:text-slate-500';
+
+                html += `<div class="flex flex-col items-center flex-1">`;
+                html += `<div class="relative flex items-center w-full">`;
+                if (i > 0) html += `<div class="flex-1 h-[3px] ${lineClass} rounded-full"></div>`;
+                html += `<div class="w-4 h-4 ${dotClass} rounded-full shrink-0 transition-all"></div>`;
+                if (i < STATUS_STEPS.length - 1) html += `<div class="flex-1 h-[3px] ${i < currentIdx ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'} rounded-full"></div>`;
+                html += `</div>`;
+                html += `<span class="text-[9px] ${textClass} mt-1.5 text-center leading-tight">${STATUS_LABELS[i]}</span>`;
+                html += `</div>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function buildImagesSection(orders) {
+            const allImages = [];
+            orders.forEach(order => {
+                if (order.images && order.images.length > 0) {
+                    order.images.forEach(img => allImages.push(img.data));
+                }
+            });
+            if (allImages.length === 0) return '';
+
+            let html = `
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="material-icons-round text-primary text-xl">photo_library</span>
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white">Imágenes del Equipo</h3>
+                        <span class="bg-gray-100 dark:bg-slate-800 text-xs text-slate-500 px-2 py-0.5 rounded-full">${allImages.length}</span>
+                    </div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">`;
+            allImages.forEach((src, i) => {
+                html += `<div class="aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-slate-700 cursor-pointer hover:border-primary hover:scale-[1.03] transition-all shadow-sm" onclick="openImageModal('${escapeHtml(src)}')"><img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" class="w-full h-full object-cover" loading="lazy"></div>`;
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        async function loadData(table) {
+            try {
+                const res = await fetch(`${API_URL}/${table}`, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const raw = await res.json();
+                return Array.isArray(raw) ? raw : (raw.data || raw.orders || raw.items || []);
+            } catch (err) {
+                console.error(`Error cargando ${table}:`, err);
+                return [];
+            }
+        }
+
+        async function renderEquipment() {
+            const params = new URLSearchParams(window.location.search);
+            const serial = params.get('serial');
+            const content = document.getElementById('content');
+
+            if (!serial) {
+                content.innerHTML = `
+                    <div class="text-center py-16 space-y-3">
+                        <span class="material-icons-round text-5xl text-red-400">error_outline</span>
+                        <p class="text-sm text-red-400 font-semibold">Enlace inválido. No se especificó número de serie.</p>
+                    </div>`;
+                return;
+            }
+
+            const [equipments, orders, clients] = await Promise.all([
+                loadData('equipments'), loadData('orders'), loadData('clients')
+            ]);
+
+            const eq = equipments.find(e => e.serial && e.serial.toLowerCase() === serial.toLowerCase());
+            const relatedOrders = orders
+                .filter(o => o.serial && o.serial.toLowerCase() === serial.toLowerCase())
+                .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+            if (!eq && relatedOrders.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-16 space-y-3">
+                        <span class="material-icons-round text-5xl text-slate-400">search_off</span>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Equipo no encontrado</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">No se encontró historial para el serial: <strong class="text-primary font-mono">${escapeHtml(serial)}</strong></p>
+                        <p class="text-xs text-slate-400">Verifica el número de serie o contacta a Mipc Computadores.</p>
+                    </div>`;
+                return;
+            }
+
+            const brand = eq?.brand || relatedOrders[0]?.brand || '--';
+            const model = eq?.model || relatedOrders[0]?.model || '--';
+            const displaySerial = eq?.serial || serial;
+            const totalOrders = relatedOrders.length;
+            const completedOrders = relatedOrders.filter(o => o.status === 'entregado').length;
+            const activeOrders = relatedOrders.filter(o => o.status && o.status !== 'entregado').length;
+            const latestOrder = relatedOrders[0];
+            const latestStatus = latestOrder?.status || 'ingresado';
+
+            // Detect device type icon
+            const brandLower = brand.toLowerCase();
+            let deviceIcon = 'laptop_mac';
+            if (brandLower.includes('samsung') || brandLower.includes('iphone') || brandLower.includes('xiaomi') || brandLower.includes('motorola') || brandLower.includes('huawei')) deviceIcon = 'smartphone';
+            else if (brandLower.includes('ipad') || brandLower.includes('tablet')) deviceIcon = 'tablet_mac';
+            else if (brandLower.includes('imac') || brandLower.includes('desktop') || brandLower.includes('torre')) deviceIcon = 'desktop_windows';
+            else if (brandLower.includes('impresora') || brandLower.includes('printer')) deviceIcon = 'print';
+
+            let html = `
+                <!-- Subtitle -->
+                <div class="text-center space-y-1">
+                    <h2 class="text-primary font-medium tracking-wide text-sm uppercase">Servicio Técnico Especializado</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Estado del equipo en tiempo real</p>
+                </div>
+
+                <!-- Equipment Card -->
+                <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-lg relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-all duration-500"></div>
+                    <div class="flex items-start space-x-4 relative z-10">
+                        <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl flex items-center justify-center shrink-0">
+                            <span class="material-icons-round text-3xl text-slate-600 dark:text-slate-300">${deviceIcon}</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">${escapeHtml(brand)} ${escapeHtml(model)}</h3>
+                            <div class="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                <span class="bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-gray-200 dark:border-slate-700">Serial: <span class="text-slate-700 dark:text-slate-200 font-mono">${escapeHtml(displaySerial)}</span></span>
+                                <span class="bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-gray-200 dark:border-slate-700">Modelo: ${escapeHtml(model)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar (latest order) -->
+                ${latestOrder ? `
+                <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+                    <p class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider mb-3 text-center">Estado actual del servicio</p>
+                    ${buildProgressBar(latestStatus)}
+                </div>` : ''}
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 p-3 rounded-xl text-center shadow-sm">
+                        <span class="block text-2xl font-bold text-primary mb-1">${totalOrders}</span>
+                        <span class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Servicios</span>
+                    </div>
+                    <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 p-3 rounded-xl text-center shadow-sm">
+                        <span class="block text-2xl font-bold text-slate-700 dark:text-white mb-1">${completedOrders}</span>
+                        <span class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Completados</span>
+                    </div>
+                    <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 p-3 rounded-xl text-center shadow-sm relative overflow-hidden">
+                        ${activeOrders > 0 ? '<div class="absolute inset-0 border-2 border-primary/20 rounded-xl animate-pulse"></div>' : ''}
+                        <span class="block text-2xl font-bold text-primary mb-1">${activeOrders}</span>
+                        <span class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Activos</span>
+                    </div>
+                </div>
+
+                <!-- Images Gallery -->
+                ${buildImagesSection(relatedOrders)}
+
+                <!-- Timeline Header -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="material-icons-round text-primary text-xl">history</span>
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white">Historial de Servicios</h3>
+                    </div>`;
+
+            if (relatedOrders.length === 0) {
+                html += `<div class="text-center py-8"><p class="text-sm text-slate-500 dark:text-slate-400">No hay órdenes registradas para este equipo.</p></div>`;
+            } else {
+                html += '<div class="relative timeline-line space-y-6 pl-2">';
+
+                relatedOrders.forEach((order) => {
+                    const client = clients.find(c => c.id === order.clientId) || { name: '--' };
+                    const statusKey = order.status || 'ingresado';
+                    const statusLabel = ORDER_STATUSES[statusKey] || statusKey;
+                    const statusCls = STATUS_CLASSES[statusKey] || 'bg-slate-500 text-white';
+                    const priceDisplay = order.price ? formatCurrency(Number(order.price)) : '--';
+                    const dateObj = order.date ? new Date(order.date) : null;
+                    const dateStr = dateObj ? dateObj.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '--';
+                    const timeStr = dateObj ? dateObj.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '';
+                    const techInitial = order.technician ? order.technician.charAt(0).toUpperCase() : '?';
+                    const isActive = statusKey !== 'entregado';
+
+                    html += `
+                    <div class="relative pl-10">
+                        <div class="absolute left-0 top-1 w-10 h-10 flex items-center justify-center z-10 bg-background-light dark:bg-background-dark">
+                            ${isActive
+                            ? '<div class="w-4 h-4 bg-primary rounded-full ring-4 ring-primary/20 shadow-[0_0_10px_rgba(163,230,53,0.6)]"></div>'
+                            : '<div class="w-3 h-3 bg-emerald-400 rounded-full ring-2 ring-emerald-400/20"></div>'}
+                        </div>
+                        <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="flex items-center text-xs text-primary font-semibold mb-1">
+                                        <span class="material-icons-round text-sm mr-1">calendar_today</span>
+                                        ${dateStr}
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500">${timeStr}</span>
+                                </div>
+                                <span class="${statusCls} text-xs font-bold px-3 py-1 rounded-full shadow-sm">${statusLabel}</span>
+                            </div>
+                            <div class="space-y-3 text-sm border-t border-gray-200 dark:border-slate-700/50 pt-3">
+                                <div class="grid grid-cols-[80px_1fr] gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide pt-0.5">Cliente</span>
+                                    <span class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(client.name)}</span>
+                                </div>
+                                ${order.failure ? `
+                                <div class="grid grid-cols-[80px_1fr] gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide pt-0.5">Falla</span>
+                                    <span class="font-medium text-red-500 dark:text-red-400">${escapeHtml(order.failure)}</span>
+                                </div>` : ''}
+                                <div class="grid grid-cols-[80px_1fr] gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide pt-0.5">Técnico</span>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] text-white font-bold">${techInitial}</div>
+                                        <span class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(order.technician || 'Por asignar')}</span>
+                                    </div>
+                                </div>
+                                ${order.accessories ? `
+                                <div class="grid grid-cols-[80px_1fr] gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide pt-0.5">Accesorios</span>
+                                    <span class="font-medium text-slate-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs inline-block self-start">${escapeHtml(order.accessories)}</span>
+                                </div>` : ''}
+                                ${order.notes ? `
+                                <div class="grid grid-cols-[80px_1fr] gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide pt-0.5">Notas</span>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">"${escapeHtml(order.notes)}"</p>
+                                </div>` : ''}
+                            </div>
+                            ${order.price ? `
+                            <div class="mt-4 pt-3 border-t border-dashed border-gray-300 dark:border-slate-700 flex justify-between items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400">Total</span>
+                                <span class="text-xl font-bold text-slate-900 dark:text-white">${priceDisplay}</span>
+                            </div>` : ''}
+                        </div>
+                    </div>`;
+                });
+
+                // End marker
+                html += `
+                    <div class="relative pl-10 opacity-50 grayscale">
+                        <div class="absolute left-0 top-1 w-10 h-10 flex items-center justify-center z-10 bg-background-light dark:bg-background-dark">
+                            <div class="w-3 h-3 bg-slate-400 dark:bg-slate-600 rounded-full"></div>
+                        </div>
+                        <div class="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Inicio de Operaciones</span>
+                        </div>
+                    </div>`;
+                html += '</div>';
+            }
+
+            html += '</div>';
+            content.innerHTML = html;
+            document.getElementById('contact-card').style.display = 'block';
+            document.title = `Historial ${brand} ${model} (${displaySerial}) - Mipc Computadores`;
+        }
+
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            document.getElementById('modal-image').src = src;
+            modal.classList.add('show');
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.remove('show');
+        }
+
+        document.getElementById('image-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') closeImageModal();
+        });
+
+        function shareLink() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({ title: document.title, url }).catch(() => { });
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    const btn = document.querySelector('[title="Compartir enlace"]');
+                    if (btn) {
+                        const icon = btn.querySelector('span');
+                        icon.textContent = 'check';
+                        setTimeout(() => { icon.textContent = 'share'; }, 2000);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', renderEquipment);
+    </script>
+</body>
+
+</html>

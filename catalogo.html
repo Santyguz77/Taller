@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>MiPC Catálogo</title>
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Manrope:wght@300..800&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Noto+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..0"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11d473",
+                        "primary-dark": "#0ea65a",
+                        "secondary": "#102219",
+                        "accent-gold": "#d4b111",
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#0a1410",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2e24",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "serif": ["Newsreader", "serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                        "manrope": ["Manrope", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        /* Icon Fix - Crucial for Material Symbols */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined' !important;
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Banner styles */
+        .banner-slide {
+            display: none;
+        }
+
+        .banner-slide.active {
+            display: block;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-body antialiased transition-colors duration-300">
+
+    <!-- CONTENEDOR PRINCIPAL RESPONSIVO -->
+    <div
+        class="min-h-screen w-full flex flex-col mx-auto bg-white dark:bg-background-dark transition-colors duration-300">
+
+        <!-- HEADER (Shared across views but customized) -->
+        <header
+            class="sticky top-0 z-50 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 md:px-8 py-4">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-4 cursor-pointer group" onclick="showView('view-home')">
+                    <button id="back-btn" onclick="event.stopPropagation(); goBack()"
+                        class="hidden md:flex items-center justify-center p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <div
+                        class="relative w-11 h-11 md:w-12 md:h-12 flex items-center justify-center overflow-hidden rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-all duration-500 shadow-inner">
+                        <img src="icon-192.png" alt="MiPC Logo"
+                            class="w-full h-full object-cover scale-125 transition-transform group-hover:scale-110">
+                    </div>
+                    <h1 style="font-family: 'Space Grotesk', sans-serif;"
+                        class="font-bold text-2xl md:text-3xl tracking-tight flex items-center">
+                        <span class="text-secondary dark:text-white uppercase">Mi</span>
+                        <span class="text-primary italic ml-0.5 relative">PC<span
+                                class="absolute -bottom-1 left-0 w-full h-1 bg-primary/30 rounded-full"></span></span>
+                    </h1>
+                </div>
+
+                <!-- Desktop Search -->
+                <div class="hidden md:flex flex-1 max-w-xl mx-8">
+                    <div
+                        class="relative w-full flex items-center h-11 rounded-full bg-slate-100 dark:bg-surface-dark px-4 focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                        <span class="material-symbols-outlined text-slate-400 mr-2">search</span>
+                        <input id="search-desktop" type="text"
+                            placeholder="Buscar periféricos, componentes o accesorios..."
+                            class="w-full bg-transparent border-none focus:ring-0 text-sm">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 md:gap-4">
+                    <button onclick="document.documentElement.classList.toggle('dark')"
+                        class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined">contrast</span>
+                    </button>
+                    <button onclick="showView('view-cart')"
+                        class="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined text-2xl">shopping_bag</span>
+                        <span id="cart-count"
+                            class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white hidden">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Search Bar -->
+            <div class="md:hidden mt-4">
+                <div class="relative flex items-center w-full h-11 rounded-full bg-slate-100 dark:bg-surface-dark px-4">
+                    <span class="material-symbols-outlined text-slate-400 mr-2 text-xl">search</span>
+                    <input id="search-mobile" type="text" placeholder="Buscar productos..."
+                        class="w-full bg-transparent border-none focus:ring-0 text-sm">
+                </div>
+            </div>
+        </header>
+
+        <!-- VISTA INICIO (HOME) -->
+        <section id="view-home" class="view-section active flex-1">
+            <div class="max-w-7xl mx-auto px-4 md:px-8 py-6">
+
+                <!-- BANNERS CARRUSEL -->
+                <div id="banners-carrusel"
+                    class="relative w-full aspect-[21/9] md:aspect-[3/1] rounded-2xl md:rounded-3xl overflow-hidden shadow-xl mb-10 bg-slate-100 dark:bg-surface-dark">
+                    <!-- Slides dinámicos -->
+                    <div id="banners-container"></div>
+
+                    <!-- Controles Carrusel -->
+                    <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2" id="banner-dots"></div>
+                    <button onclick="prevSlide()"
+                        class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-sm transition-all hidden md:flex items-center justify-center">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    <button onclick="nextSlide()"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-sm transition-all hidden md:flex items-center justify-center">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+
+                <!-- CATEGORÍAS -->
+                <div class="mb-10">
+                    <h3 class="text-xl font-display font-bold mb-6">Categorías</h3>
+                    <div class="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar pb-4" id="categories-container">
+                        <!-- Items dinámicos -->
+                    </div>
+                </div>
+
+                <!-- TENDENCIAS / GRID -->
+                <div class="mb-20">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 id="grid-title" class="text-2xl font-display font-bold">Tendencias</h3>
+                        <div class="flex items-center gap-2 text-slate-400 text-sm">
+                            <span id="product-count-info">0</span> productos
+                        </div>
+                    </div>
+                    <div id="products-grid"
+                        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
+                        <!-- Tarjetas dinámicas -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA DETALLES -->
+        <section id="view-detail" class="view-section flex-1">
+            <div class="max-w-7xl mx-auto px-4 md:px-8 py-8">
+                <div id="detail-container" class="flex flex-col md:flex-row gap-8 md:gap-16">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA CARRITO -->
+        <section id="view-cart" class="view-section flex-1">
+            <div class="max-w-3xl mx-auto px-4 md:px-8 py-10">
+                <h2 class="text-3xl font-display font-bold mb-8">Tu Carrito</h2>
+                <div id="cart-items-container" class="space-y-6">
+                    <!-- Dinámico -->
+                </div>
+
+                <!-- Resumen -->
+                <div id="cart-summary"
+                    class="mt-12 p-8 bg-slate-50 dark:bg-surface-dark rounded-3xl border border-slate-100 dark:border-slate-800 hidden">
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between text-slate-500 uppercase text-xs font-bold tracking-widest">
+                            <span>Subtotal</span>
+                            <span id="cart-subtotal" class="text-slate-900 dark:text-white">$0</span>
+                        </div>
+                        <div class="flex justify-between text-slate-500 uppercase text-xs font-bold tracking-widest">
+                            <span>Envío</span>
+                            <span class="text-primary">Gratis</span>
+                        </div>
+                        <div class="h-px bg-slate-200 dark:bg-slate-700 my-4"></div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-lg font-bold">Total</span>
+                            <span id="cart-total" class="text-3xl font-display font-bold text-primary">$0</span>
+                        </div>
+                    </div>
+                    <button onclick="sendToWhatsApp()"
+                        class="w-full bg-primary hover:bg-primary-dark text-white font-bold py-5 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
+                        <span class="material-symbols-outlined">send</span>
+                        Confirmar Pedido por WhatsApp
+                    </button>
+                </div>
+
+                <!-- Vacío -->
+                <div id="cart-empty" class="text-center py-20 flex flex-col items-center">
+                    <div
+                        class="w-24 h-24 rounded-full bg-slate-100 dark:bg-surface-dark flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-4xl text-slate-400">shopping_basket</span>
+                    </div>
+                    <p class="text-slate-500 mb-8">Tu carrito está vacío</p>
+                    <button onclick="showView('view-home')"
+                        class="px-8 py-3 rounded-full bg-secondary text-white font-bold hover:bg-black transition-colors">Empezar
+                        a comprar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER (Mobile only) -->
+        <footer
+            class="md:hidden sticky bottom-0 z-40 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 pb-safe">
+            <div class="flex justify-around items-center p-2">
+                <button onclick="showView('view-home')"
+                    class="nav-item flex flex-col items-center gap-1 p-2 text-primary" data-view="view-home">
+                    <span class="material-symbols-outlined">home</span>
+                    <span class="text-[10px] font-bold">Inicio</span>
+                </button>
+                <button onclick="showView('view-cart')"
+                    class="nav-item flex flex-col items-center gap-1 p-2 text-slate-400" data-view="view-cart">
+                    <div class="relative">
+                        <span class="material-symbols-outlined">shopping_basket</span>
+                        <span id="cart-badge-mobile"
+                            class="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-white hidden">0</span>
+                    </div>
+                    <span class="text-[10px] font-bold">Carrito</span>
+                </button>
+                <button onclick="window.open('https://wa.me/573202307508', '_blank')"
+                    class="flex flex-col items-center gap-1 p-2 text-slate-400">
+                    <span class="material-symbols-outlined">chat</span>
+                    <span class="text-[10px] font-bold">Asesor</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        const API_URL = "https://casinos-bunny-edited-officers.trycloudflare.com/api";
+        const WHATSAPP_NUMBER = "573202307508";
+
+        let products = [];
+        let cart = JSON.parse(localStorage.getItem('mipc_cart') || '[]');
+        let currentView = 'view-home';
+        let currentCategory = 'todos';
+        let bannerIndex = 0;
+        let bannerTimer = null;
+
+        const defaultBanners = [
+            {
+                img: "banner.png",
+                tag: "Novedad",
+                title: "Gamer Setup Ultimate",
+                sub: "Domina el juego con tecnología de vanguardia y rendimiento sin límites.",
+                btn: "Explorar Colección"
+            },
+            {
+                img: "banner2.png",
+                tag: "Productividad",
+                title: "Espacios de Trabajo",
+                sub: "Encuentra el equilibrio perfecto entre diseño y rendimiento para tu oficina.",
+                btn: "Ver Equipos"
+            }
+        ];
+
+        // Formatters
+        const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+
+        // Views
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(viewId);
+            if (target) target.classList.add('active');
+            currentView = viewId;
+            window.scrollTo(0, 0);
+
+            // Update Header Nav
+            const backBtn = document.getElementById('back-btn');
+            if (viewId === 'view-home') backBtn?.classList.add('hidden');
+            else backBtn?.classList.remove('hidden');
+
+            // Responsive updates
+            if (viewId === 'view-cart') renderCart();
+        }
+
+        function goBack() {
+            if (currentView !== 'view-home') showView('view-home');
+        }
+
+        // Banners
+        function initBanners() {
+            const container = document.getElementById('banners-container');
+            const dotContainer = document.getElementById('banner-dots');
+
+            container.innerHTML = defaultBanners.map((b, i) => `
+                <div class="banner-slide absolute inset-0 w-full h-full ${i === 0 ? 'active' : ''}">
+                    <img src="${b.img}" class="w-full h-full object-cover transition-transform duration-[10000ms] ease-linear scale-100 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center px-8 md:px-20 text-white">
+                        <div class="max-w-2xl fade-in space-y-4">
+                            <span class="inline-block px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary text-xs font-bold uppercase tracking-[0.2em] mb-2">${b.tag}</span>
+                            <h2 style="font-family: 'Space Grotesk', sans-serif;" class="text-4xl md:text-7xl font-bold mb-2 leading-[0.9] tracking-tighter">${b.title}</h2>
+                            <p class="text-slate-300 text-lg md:text-2xl font-medium max-w-lg leading-snug">${b.sub}</p>
+                            <div class="pt-4">
+                                <button class="bg-white text-secondary px-8 py-4 rounded-2xl font-bold text-base transition-all hover:bg-primary hover:text-white hover:shadow-xl hover:shadow-primary/20 active:scale-95">
+                                    ${b.btn}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            dotContainer.innerHTML = defaultBanners.map((_, i) => `
+                <button onclick="setSlide(${i})" class="w-2.5 h-2.5 rounded-full transition-all duration-500 ${i === 0 ? 'bg-primary w-10' : 'bg-white/30 hover:bg-white/60'}"></button>
+            `).join('');
+
+            startBannerTimer();
+        }
+
+        function startBannerTimer() {
+            if (bannerTimer) clearInterval(bannerTimer);
+            bannerTimer = setInterval(nextSlide, 5000);
+        }
+
+        function setSlide(i) {
+            bannerIndex = i;
+            updateSlides();
+            startBannerTimer();
+        }
+
+        function nextSlide() {
+            bannerIndex = (bannerIndex + 1) % defaultBanners.length;
+            updateSlides();
+        }
+
+        function prevSlide() {
+            bannerIndex = (bannerIndex - 1 + defaultBanners.length) % defaultBanners.length;
+            updateSlides();
+        }
+
+        function updateSlides() {
+            const slides = document.querySelectorAll('.banner-slide');
+            const dots = document.querySelectorAll('#banner-dots button');
+            slides.forEach((s, i) => s.classList.toggle('active', i === bannerIndex));
+            dots.forEach((d, i) => {
+                d.classList.toggle('bg-primary', i === bannerIndex);
+                d.classList.toggle('w-8', i === bannerIndex);
+                d.classList.toggle('bg-white/40', i !== bannerIndex);
+                d.classList.remove('w-8', i !== bannerIndex);
+            });
+        }
+
+        // Data Loading
+        async function loadData() {
+            try {
+                // Try catalog items first
+                let res = await fetch(`${API_URL}/catalog_items`);
+                let data = await res.json();
+                let items = Array.isArray(data) ? data : (data.products || data.data || []);
+
+                if (items.length === 0) {
+                    // Fallback to inventory
+                    res = await fetch(`${API_URL}/inventory`);
+                    data = await res.json();
+                    items = Array.isArray(data) ? data : (data.inventory || data.data || []);
+                }
+
+                products = items.map(p => ({
+                    id: p.id || p._id,
+                    name: p.name,
+                    price: p.price || p.sellPrice || 0,
+                    description: p.description || '',
+                    category: p.category || 'General',
+                    image: p.imageUrl || (p.images && p.images.length > 0 ? (typeof p.images[0] === 'string' ? p.images[0] : p.images[0].data) : 'https://via.placeholder.com/400'),
+                    stock: p.stock || 0
+                }));
+
+                renderContent();
+            } catch (error) {
+                console.error("Error loading products:", error);
+                // Demo data in case of error
+                products = [
+                    { id: 1, name: "Teclado Razer BlackWidow", price: 549000, category: "Teclados", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEUE1WGU3QCXvduX-qs7G2_FVw-4MJJcQvAY1KbfjmJFLAcT5KFSA_YyzDEm-kArK4X6c23SQPv110_6s6yjIaflO_xS_9U1axsvuGuixWkxo9TjES5mdY77Bu1oOoH1RnArmydo0wkypcFR475WSPlCD1TVF0ipfF9EbbYGIU9NvBU8CSyNw9AYqfgr-jld2NiYEIb5KKn_AdRJOH65DMGA24zmeROIzK_EC0TnRStq9ePyhWNrsP1RsZHps1hbXl1DfRLveTGOFO", description: "El teclado gamer mecánico más avanzado con switches verdes táctiles." },
+                    { id: 2, name: "Mouse Logitech G502", price: 289000, category: "Mouse", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzGnTCC2DLZ3yAmlcWKIcXaD3EIClIxv7-X370nNfhplxFn0FQE7lahUI6Afjj8ZrLD9UqVx37cHBfAjQFY_UBqbewP0bRJZUJHqU9dLku01wQf5cD7FizAYMA1ey0lxnaetTDRFgnKIHAlqQfCAS70b3gqnxR4SNarRwphsLQtirPXgHXpmz4W-Hof5VFBLtG5C4986_1T0mSAEf2ZZKe_LBhrmHH4bCxjmFnV3bZ0vQT-b8lCrVaWP_ZHRZulvIuzYYPkVEPUM0v", description: "Icono de precisión y personalización RGB." }
+                ];
+                renderContent();
+            }
+        }
+
+        function renderContent() {
+            renderCategories();
+            renderGrid();
+            updateCartUI();
+        }
+
+        function renderCategories() {
+            const catContainer = document.getElementById('categories-container');
+            const cats = ['todos', ...new Set(products.map(p => p.category.toLowerCase()))];
+
+            catContainer.innerHTML = cats.map(c => `
+                <button onclick="setCategory('${c}')" class="group flex flex-col items-center gap-3 shrink-0">
+                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl flex items-center justify-center transition-all shadow-sm ${currentCategory === c ? 'bg-primary text-white scale-105 shadow-primary/30' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}">
+                        <span class="material-symbols-outlined text-3xl">
+                            ${c === 'todos' ? 'apps' : (c.includes('teclado') ? 'keyboard' : (c.includes('mouse') ? 'mouse' : (c.includes('audio') ? 'headphones' : 'category')))}
+                        </span>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wider ${currentCategory === c ? 'text-primary' : 'text-slate-500'}">${c}</span>
+                </button>
+            `).join('');
+        }
+
+        function setCategory(c) {
+            currentCategory = c;
+            document.getElementById('grid-title').textContent = c === 'todos' ? 'Todos los Productos' : c.charAt(0).toUpperCase() + c.slice(1);
+            renderCategories();
+            renderGrid();
+        }
+
+        function renderGrid(query = '') {
+            const grid = document.getElementById('products-grid');
+            let filtered = products.filter(p => currentCategory === 'todos' || p.category.toLowerCase() === currentCategory);
+
+            if (query) {
+                const q = query.toLowerCase();
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+            }
+
+            document.getElementById('product-count-info').textContent = filtered.length;
+
+            grid.innerHTML = filtered.map(p => `
+                <div onclick="openProductDetail('${p.id}')" class="fade-in group bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden hover:shadow-2xl transition-all cursor-pointer flex flex-col">
+                    <div class="relative aspect-square overflow-hidden bg-slate-100 dark:bg-black/20">
+                        <img src="${p.image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="${p.name}">
+                        <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div class="p-4 md:p-6 flex flex-col flex-1">
+                        <span class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">${p.category}</span>
+                        <h4 class="font-display text-base md:text-lg font-bold line-clamp-2 md:line-clamp-1 mb-2 leading-tight">${p.name}</h4>
+                        <div class="flex items-center justify-between mt-auto">
+                            <span class="text-lg font-bold md:text-xl">${fmt.format(p.price)}</span>
+                            <button onclick="event.stopPropagation(); addToCart('${p.id}')" class="w-10 h-10 rounded-xl bg-slate-900 dark:bg-primary text-white dark:text-secondary flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+                                <span class="material-symbols-outlined text-xl">add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Details
+        function openProductDetail(id) {
+            const p = products.find(x => x.id == id);
+            if (!p) return;
+
+            document.getElementById('detail-container').innerHTML = `
+                <!-- Desktop side-by-side or Mobile stacked -->
+                <div class="w-full md:w-1/2">
+                    <div class="aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-surface-dark">
+                        <img src="${p.image}" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 flex flex-col py-4">
+                    <div class="mb-8">
+                        <span class="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">Stock Disponible</span>
+                        <h2 class="text-4xl md:text-5xl font-display font-bold text-secondary dark:text-white mb-4 leading-tight">${p.name}</h2>
+                        <div class="flex items-baseline gap-4 mb-6">
+                            <span class="text-3xl font-bold text-primary">${fmt.format(p.price)}</span>
+                            <span class="text-slate-400 line-through text-lg">${fmt.format(p.price * 1.15)}</span>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-lg leading-relaxed mb-8">${p.description}</p>
+                    </div>
+
+                    <div class="mt-auto space-y-4">
+                        <div class="flex gap-4">
+                            <button onclick="addToCart('${p.id}')" class="flex-1 bg-secondary dark:bg-primary text-white dark:text-secondary font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl hover:translate-y-[-2px] transition-all active:scale-[0.98]">
+                                <span class="material-symbols-outlined">shopping_bag</span>
+                                Agregar al Carrito
+                            </button>
+                            <button onclick="window.open('https://wa.me/${WHATSAPP_NUMBER}', '_blank')" class="w-16 h-full flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white hover:bg-slate-200 transition-colors">
+                                <span class="material-symbols-outlined">chat</span>
+                            </button>
+                        </div>
+                        <p class="text-center text-xs text-slate-400">Entrega inmediata en Bucaramanga y alrededores.</p>
+                    </div>
+                </div>
+            `;
+            showView('view-detail');
+        }
+
+        // Cart
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const summary = document.getElementById('cart-summary');
+            const empty = document.getElementById('cart-empty');
+
+            if (cart.length === 0) {
+                container.innerHTML = '';
+                summary.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            summary.classList.remove('hidden');
+
+            let total = 0;
+            container.innerHTML = cart.map((item, idx) => {
+                const sub = item.price * item.qty;
+                total += sub;
+                return `
+                    <div class="flex items-center gap-4 bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 p-4 rounded-3xl fade-in" style="animation-delay: ${idx * 0.1}s">
+                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shrink-0 bg-slate-50">
+                            <img src="${item.image}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-display font-bold text-lg leading-tight mb-1">${item.name}</h4>
+                            <p class="text-primary font-bold">${fmt.format(item.price)}</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-3 shrink-0">
+                            <div class="flex items-center bg-slate-100 dark:bg-background-dark rounded-xl h-10 px-1 border border-slate-200 dark:border-slate-700">
+                                <button onclick="changeQty('${item.id}', -1)" class="w-8 flex items-center justify-center font-bold text-slate-500 hover:text-primary">−</button>
+                                <span class="w-8 text-center text-sm font-bold">${item.qty}</span>
+                                <button onclick="changeQty('${item.id}', 1)" class="w-8 flex items-center justify-center font-bold text-slate-500 hover:text-primary">+</button>
+                            </div>
+                            <button onclick="removeFromCart('${item.id}')" class="text-slate-300 hover:text-red-500 transition-colors p-1">
+                                <span class="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('cart-subtotal').textContent = fmt.format(total);
+            document.getElementById('cart-total').textContent = fmt.format(total);
+        }
+
+        function addToCart(id) {
+            const p = products.find(x => x.id == id);
+            if (!p) return;
+
+            const existing = cart.find(i => i.id == id);
+            if (existing) existing.qty++;
+            else cart.push({ ...p, qty: 1 });
+
+            saveCart();
+            updateCartUI();
+
+            // Minimalist feedback
+            const btn = event?.currentTarget;
+            if (btn) {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<span class="material-symbols-outlined">check</span>';
+                setTimeout(() => btn.innerHTML = original, 1000);
+            }
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(i => i.id != id);
+            saveCart();
+            updateCartUI();
+            renderCart();
+        }
+
+        function changeQty(id, delta) {
+            const item = cart.find(i => i.id == id);
+            if (!item) return;
+            item.qty += delta;
+            if (item.qty <= 0) { removeFromCart(id); return; }
+            saveCart();
+            updateCartUI();
+            renderCart();
+        }
+
+        function saveCart() { localStorage.setItem('mipc_cart', JSON.stringify(cart)); }
+
+        function updateCartUI() {
+            const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+            ['cart-count', 'cart-badge-mobile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = totalItems;
+                    el.classList.toggle('hidden', totalItems === 0);
+                }
+            });
+        }
+
+        function sendToWhatsApp() {
+            if (cart.length === 0) return;
+            let total = 0;
+            let msg = '🛒 *NUEVO PEDIDO - MiPC COMPUTADORES*\n\n';
+            cart.forEach(item => {
+                const sub = item.price * item.qty;
+                total += sub;
+                msg += `🔹 *${item.name}*\n   Cant: ${item.qty} | Sub: ${fmt.format(sub)}\n\n`;
+            });
+            msg += `💰 *TOTAL: ${fmt.format(total)}*\n\nHola 👋, quiero concretar mi pedido desde el catálogo. ¿Podrían confirmarme disponibilidad?`;
+            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // Search logic
+        ['search-desktop', 'search-mobile'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', (e) => {
+                renderGrid(e.target.value);
+                if (currentView !== 'view-home') showView('view-home');
+            });
+        });
+
+        // Initialize
+        function init() {
+            initBanners();
+            loadData();
+            updateCartUI();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
