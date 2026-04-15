@@ -560,6 +560,37 @@
 			font-weight: 600
 		}
 
+		/* NUEVO: estilos para facturas de proveedores */
+		.supplier-invoice-img {
+			width: 60px;
+			height: 60px;
+			object-fit: cover;
+			border-radius: 4px;
+			cursor: pointer;
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			transition: transform 0.2s;
+		}
+
+		.supplier-invoice-img:hover {
+			transform: scale(1.1);
+		}
+
+		.balance-indicator {
+			font-weight: 600;
+			color: #ff5b6b;
+		}
+
+		.balance-indicator.paid {
+			color: #7af0a5;
+		}
+
+		.abono-row {
+			display: flex;
+			justify-content: space-between;
+			padding: 4px 0;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		}
+
 		/* NUEVO: indicador de carga (spinner) */
 		.spinner {
 			width: 32px;
@@ -1779,6 +1810,8 @@
 				<li data-view="orders"><span class="material-icons-round">receipt_long</span> Órdenes</li>
 				<li data-view="clients"><span class="material-icons-round">people</span> Clientes</li>
 				<li data-view="invoices"><span class="material-icons-round">description</span> Facturas</li>
+				<li data-view="supplier-invoices"><span class="material-icons-round">receipt_long</span> Facturas Prov.
+				</li>
 				<li data-view="finance"><span class="material-icons-round">payments</span> Finanzas</li>
 				<li data-view="inventory"><span class="material-icons-round">inventory_2</span> Inventario / Catálogo
 				</li>
@@ -2265,6 +2298,49 @@
 				</div>
 			</section>
 
+			<!-- NUEVO: Sección Facturas Proveedores -->
+			<section id="supplier-invoices-section" class="card" style="display:none;margin-top:12px">
+				<div class="header">
+					<h3>Facturas de Proveedores</h3>
+					<div class="controls">
+						<button class="btn" id="btn-add-supplier-invoice"
+							style="background:var(--accent);color:#07121a">+ Nueva Factura Prov.</button>
+					</div>
+				</div>
+				<div class="small filters" style="margin-bottom:12px">
+					Filtrar:
+					<input id="supplier-invoice-filter" placeholder="Buscar por proveedor o notas"
+						style="padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+					<select id="supplier-payment-filter"
+						style="margin-left:8px;padding:6px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2">
+						<option value="">Todos los estados</option>
+						<option value="paid">Pagadas</option>
+						<option value="unpaid">Pendientes</option>
+						<option value="partial">Abonadas</option>
+					</select>
+				</div>
+				<div class="table-scroll">
+					<table id="supplier-invoices-table">
+						<thead>
+							<tr>
+								<th>Proveedor</th>
+								<th>Fecha</th>
+								<th>Total</th>
+								<th>Abonado</th>
+								<th>Saldo</th>
+								<th>Estado</th>
+								<th>Imagen</th>
+								<th>Notas</th>
+								<th>Acciones</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+				<!-- Vista de tarjetas para móvil -->
+				<div class="cards-container" id="supplier-invoices-cards-container"></div>
+			</section>
+
 			<section id="settings-section" class="card" style="display:none;margin-top:12px">
 				<h3>Configuración</h3>
 				<button class="btn" id="export-data">Exportar datos (.json)</button>
@@ -2697,6 +2773,69 @@
 		</div>
 	</div>
 
+	<!-- NUEVO: Modal factura proveedor -->
+	<div class="modal" id="modal-supplier-invoice">
+		<div class="panel">
+			<h3 id="modal-supplier-invoice-title">Nueva factura de proveedor</h3>
+			<form id="form-supplier-invoice">
+				<div class="form-row">
+					<input name="supplier" placeholder="Nombre del proveedor" required>
+					<input name="date" type="date" required>
+				</div>
+				<div class="form-row">
+					<input name="total" type="number" step="0.01" placeholder="Valor total de la factura" required>
+				</div>
+				<div class="form-row" style="flex-direction:column;align-items:flex-start">
+					<label style="color:var(--muted);font-size:13px;margin-bottom:4px">Imagen de la factura:</label>
+					<input type="file" id="supplier-invoice-image-input" accept="image/*"
+						style="width:100%;padding:8px;border:1px dashed rgba(255,255,255,0.1);border-radius:6px;background:#051417;color:#eaf6f3">
+					<div id="supplier-invoice-image-preview" style="margin-top:8px"></div>
+					<input type="hidden" name="image" id="supplier-invoice-image-base64">
+				</div>
+				<div class="form-row">
+					<textarea name="notes" placeholder="Notas adicionales" rows="2"></textarea>
+				</div>
+				<div style="display:flex;gap:8px;justify-content:flex-end">
+					<button type="button" class="btn" id="btn-close-supplier-invoice"
+						style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn">Guardar factura</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- NUEVO: Modal abono factura proveedor -->
+	<div class="modal" id="modal-supplier-abono">
+		<div class="panel" style="width: 400px">
+			<h3>Registrar Abono</h3>
+			<form id="form-supplier-abono">
+				<input type="hidden" name="invoiceId">
+				<div
+					style="margin-bottom:12px;padding:10px;background:rgba(163,230,53,0.05);border-radius:6px;border:1px solid rgba(163,230,53,0.1)">
+					<div class="small">Proveedor: <span id="abono-supplier-name"
+							style="color:#fff;font-weight:600"></span></div>
+					<div class="small">Saldo actual: <span id="abono-current-balance"
+							style="color:var(--accent);font-weight:600"></span></div>
+				</div>
+				<div class="form-row">
+					<input name="amount" type="number" step="0.01" placeholder="Monto del abono" required>
+					<input name="date" type="date" required>
+				</div>
+				<div class="form-row">
+					<input name="notes" placeholder="Notas (ej: comprobante, banco)">
+				</div>
+				<div id="abonos-history-list" style="margin-top:12px;max-height:150px;overflow:auto">
+					<!-- historial de abonos -->
+				</div>
+				<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+					<button type="button" class="btn" id="btn-close-supplier-abono"
+						style="background:#64707a">Cancelar</button>
+					<button type="submit" class="btn">Registrar Abono</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
 	<!-- NUEVO: Modal de carga (Guardando...) -->
 	<div class="modal" id="modal-loading" style="z-index: 99999;">
 		<div class="panel" style="width: 200px; text-align: center; background: #071b22;">
@@ -2987,6 +3126,9 @@
 		// NUEVO: helpers de facturas (API)
 		async function loadInvoices() { return await loadTable('invoices'); }
 		async function saveInvoices(list) { await saveTable('invoices', list); }
+		async function loadSupplierInvoices() { return await loadTable('supplier_invoices'); }
+		async function saveSupplierInvoice_API(item) { await saveItem('supplier_invoices', item); }
+		async function deleteSupplierInvoice_API(id) { await deleteItem('supplier_invoices', id); }
 
 		// Categorías predefinidas para Finanzas
 		const FINANCE_CATEGORIES = ['Servicios', 'Repuestos', 'Ventas', 'Nomina', 'Otros', 'Inventario']; // NUEVO: 'Inventario'
@@ -3126,6 +3268,7 @@
 			await renderFinance();
 			await renderInventory();
 			await renderInvoices(); // NUEVO
+			await renderSupplierInvoices(); // NUEVO
 
 			// Verificar conexión al inicio
 			await checkConnection();
@@ -3274,6 +3417,45 @@
 				updateFinanceCheckbox(); // llamar al inicio
 			}
 
+			// NUEVO: bindings facturas proveedores
+			const btnAddSupInv = document.getElementById('btn-add-supplier-invoice');
+			if (btnAddSupInv) btnAddSupInv.addEventListener('click', () => openSupplierInvoiceModal());
+
+			const btnCloseSupInv = document.getElementById('btn-close-supplier-invoice');
+			if (btnCloseSupInv) btnCloseSupInv.addEventListener('click', () => closeModal('#modal-supplier-invoice'));
+
+			const formSupInv = document.getElementById('form-supplier-invoice');
+			if (formSupInv) formSupInv.addEventListener('submit', async (e) => await saveSupplierInvoiceFromForm(e));
+
+			const supInvFilter = document.getElementById('supplier-invoice-filter');
+			if (supInvFilter) supInvFilter.addEventListener('input', async () => await renderSupplierInvoices());
+
+			const supPayFilter = document.getElementById('supplier-payment-filter');
+			if (supPayFilter) supPayFilter.addEventListener('change', async () => await renderSupplierInvoices());
+
+			const btnCloseAbono = document.getElementById('btn-close-supplier-abono');
+			if (btnCloseAbono) btnCloseAbono.addEventListener('click', () => closeModal('#modal-supplier-abono'));
+
+			const formAbono = document.getElementById('form-supplier-abono');
+			if (formAbono) formAbono.addEventListener('submit', async (e) => await saveSupplierAbonoFromForm(e));
+
+			const supImgInput = document.getElementById('supplier-invoice-image-input');
+			if (supImgInput) {
+				supImgInput.addEventListener('change', async (e) => {
+					const file = e.target.files[0];
+					if (file) {
+						const reader = new FileReader();
+						reader.onload = (re) => {
+							const base64 = re.target.result;
+							document.getElementById('supplier-invoice-image-base64').value = base64;
+							const preview = document.getElementById('supplier-invoice-image-preview');
+							preview.innerHTML = `<img src="${base64}" class="supplier-invoice-img" style="width:150px;height:auto">`;
+						};
+						reader.readAsDataURL(file);
+					}
+				});
+			}
+
 			// NUEVO: Manejo del menú móvil
 			const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 			const sidebar = document.getElementById('sidebar');
@@ -3305,7 +3487,7 @@
 
 		async function renderView(view) {
 			currentView = view; // guardar vista actual
-			const titles = { dashboard: 'Dashboard', orders: 'Órdenes', clients: 'Clientes', invoices: 'Facturas', finance: 'Finanzas', inventory: 'Inventario / Catálogo', assistant: 'Asistente IA', settings: 'Configuración' };
+			const titles = { dashboard: 'Dashboard', orders: 'Órdenes', clients: 'Clientes', invoices: 'Facturas', 'supplier-invoices': 'Facturas de Proveedores', finance: 'Finanzas', inventory: 'Inventario / Catálogo', assistant: 'Asistente IA', settings: 'Configuración' };
 			$('#view-title').textContent = titles[view] || view;
 			$('#dashboard-section').style.display = view === 'dashboard' ? 'block' : 'none';
 			$('#orders-section').style.display = view === 'orders' ? 'block' : 'none';
@@ -3313,6 +3495,7 @@
 			$('#invoices-section').style.display = view === 'invoices' ? 'block' : 'none';
 			$('#finance-section').style.display = view === 'finance' ? 'block' : 'none';
 			$('#inventory-section').style.display = view === 'inventory' ? 'block' : 'none';
+			$('#supplier-invoices-section').style.display = view === 'supplier-invoices' ? 'block' : 'none';
 			$('#assistant-section').style.display = view === 'assistant' ? 'block' : 'none';
 			$('#settings-section').style.display = view === 'settings' ? 'block' : 'none';
 			$('#btn-add-client').style.display = view === 'clients' ? 'inline-block' : 'none';
@@ -3331,6 +3514,14 @@
 			if (view === 'assistant') {
 				setTimeout(() => { const ci = document.getElementById('chat-input'); if (ci) ci.focus(); }, 100);
 			}
+
+			// Renderizar datos según la vista si es necesario
+			if (view === 'orders') await renderOrders();
+			if (view === 'clients') await renderClients();
+			if (view === 'invoices') await renderInvoices();
+			if (view === 'supplier-invoices') await renderSupplierInvoices();
+			if (view === 'inventory') await renderInventory();
+			if (view === 'finance') await renderFinance();
 		}
 
 		// Render órdenes (ahora asíncrono)
@@ -5519,6 +5710,263 @@
 
 			const sum = document.getElementById('invoices-summary');
 			if (sum) sum.textContent = `Facturas: ${filtered.length} — Pagadas: ${paidCount} — Total facturado: ${formatCurrency(totalAmount)}`;
+		}
+
+		/* NUEVO: funciones para facturas de proveedores */
+		async function renderSupplierInvoices() {
+			const tbody = $('#supplier-invoices-table tbody');
+			const cardsContainer = $('#supplier-invoices-cards-container');
+			if (!tbody || !cardsContainer) return;
+
+			const filter = ($('#supplier-invoice-filter').value || '').toLowerCase().trim();
+			const statusFilter = $('#supplier-payment-filter').value;
+			const all = await loadSupplierInvoices();
+
+			// Ordenar por fecha desc
+			all.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+			const filtered = all.filter(inv => {
+				const status = getSupplierInvoiceStatus(inv);
+				if (statusFilter && status !== statusFilter) return false;
+				if (!filter) return true;
+				return [inv.supplier, inv.notes].join(' ').toLowerCase().includes(filter);
+			});
+
+			tbody.innerHTML = '';
+			cardsContainer.innerHTML = '';
+
+			filtered.forEach(inv => {
+				const status = getSupplierInvoiceStatus(inv);
+				const paymentsTotal = (inv.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+				const balance = Number(inv.total || 0) - paymentsTotal;
+
+				let statusBadge = '';
+				if (status === 'paid') statusBadge = '<span class="badge-status-paid">Pagada</span>';
+				else if (status === 'partial') statusBadge = '<span class="badge-status-partial">Abonada</span>';
+				else statusBadge = '<span class="badge-status-unpaid">Pendiente</span>';
+
+				const tr = document.createElement('tr');
+				tr.innerHTML = `
+					<td>${inv.id.substring(8, 16)}</td>
+					<td><strong>${escapeHtml(inv.supplier)}</strong></td>
+					<td>${inv.date}</td>
+					<td>$${Number(inv.total || 0).toLocaleString('es-CO')}</td>
+					<td>$${paymentsTotal.toLocaleString('es-CO')}</td>
+					<td class="balance-indicator ${balance <= 0 ? 'paid' : ''}">$${balance.toLocaleString('es-CO')}</td>
+					<td>${statusBadge}</td>
+					<td>${inv.image ? `<img src="${inv.image}" class="supplier-invoice-img" onclick="viewFullImage('${inv.image}')">` : 'Sin imagen'}</td>
+					<td class="small">${escapeHtml(inv.notes || '')}</td>
+					<td class="actions">
+						<button class="btn btn-edit" onclick="openSupplierInvoiceModal('${inv.id}')" title="Editar"><span class="material-icons-round">edit</span></button>
+						<button class="btn" style="background:#7af0a5;color:#07121a" onclick="openSupplierAbonoModal('${inv.id}')" title="Abonar"><span class="material-icons-round">payments</span></button>
+						<button class="btn btn-delete" onclick="deleteSupplierInvoice('${inv.id}')" title="Eliminar"><span class="material-icons-round">delete</span></button>
+					</td>
+				`;
+				tbody.appendChild(tr);
+
+				// Card móvil
+				const card = document.createElement('div');
+				card.className = 'data-card';
+				card.innerHTML = `
+					<div class="data-card-header">
+						<div class="data-card-title">${escapeHtml(inv.supplier)}</div>
+						<div>${statusBadge}</div>
+					</div>
+					<div class="data-card-body">
+						<div class="data-card-row"><span class="data-card-label">Fecha:</span><span class="data-card-value">${inv.date}</span></div>
+						<div class="data-card-row"><span class="data-card-label">Total:</span><span class="data-card-value">$${Number(inv.total || 0).toLocaleString('es-CO')}</span></div>
+						<div class="data-card-row"><span class="data-card-label">Saldo:</span><span class="data-card-value balance-indicator ${balance <= 0 ? 'paid' : ''}">$${balance.toLocaleString('es-CO')}</span></div>
+					</div>
+					<div class="data-card-actions">
+						<button class="btn btn-edit" onclick="openSupplierInvoiceModal('${inv.id}')">Editar</button>
+						<button class="btn" style="background:#7af0a5;color:#07121a" onclick="openSupplierAbonoModal('${inv.id}')">Abonar</button>
+						<button class="btn btn-delete" onclick="deleteSupplierInvoice('${inv.id}')">Eliminar</button>
+					</div>
+				`;
+				cardsContainer.appendChild(card);
+			});
+		}
+
+		function getSupplierInvoiceStatus(inv) {
+			const total = Number(inv.total || 0);
+			const paid = (inv.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+			if (paid >= total) return 'paid';
+			if (paid > 0) return 'partial';
+			return 'unpaid';
+		}
+
+		let editingSupplierInvoiceId = null;
+
+		async function openSupplierInvoiceModal(id = null) {
+			editingSupplierInvoiceId = id;
+			const form = $('#form-supplier-invoice');
+			if (!form) return;
+			form.reset();
+			$('#supplier-invoice-image-preview').innerHTML = '';
+			$('#supplier-invoice-image-base64').value = '';
+
+			if (id) {
+				const all = await loadSupplierInvoices();
+				const inv = all.find(x => x.id === id);
+				if (inv) {
+					form.supplier.value = inv.supplier;
+					form.date.value = inv.date;
+					form.total.value = inv.total;
+					form.notes.value = inv.notes || '';
+					if (inv.image) {
+						$('#supplier-invoice-image-base64').value = inv.image;
+						$('#supplier-invoice-image-preview').innerHTML = `<img src="${inv.image}" class="supplier-invoice-img" style="width:150px;height:auto;cursor:default">`;
+					}
+					$('#modal-supplier-invoice-title').textContent = 'Editar factura de proveedor';
+				}
+			} else {
+				form.date.value = new Date().toISOString().slice(0, 10);
+				$('#modal-supplier-invoice-title').textContent = 'Nueva factura de proveedor';
+			}
+			$('#modal-supplier-invoice').classList.add('show');
+		}
+
+		async function saveSupplierInvoiceFromForm(e) {
+			e.preventDefault();
+			const form = e.target;
+			const data = {
+				supplier: form.supplier.value,
+				date: form.date.value,
+				total: Number(form.total.value),
+				notes: form.notes.value,
+				image: $('#supplier-invoice-image-base64').value,
+				payments: []
+			};
+
+			showLoading('Guardando factura...');
+			try {
+				if (editingSupplierInvoiceId) {
+					const all = await loadSupplierInvoices();
+					const old = all.find(x => x.id === editingSupplierInvoiceId);
+					data.id = editingSupplierInvoiceId;
+					data.payments = old.payments || [];
+				} else {
+					data.id = 'sup_inv_' + Date.now();
+				}
+
+				await saveItem('supplier_invoices', data);
+				closeModal('#modal-supplier-invoice');
+				await renderSupplierInvoices();
+			} catch (err) {
+				alert(err.message);
+			} finally {
+				hideLoading();
+			}
+		}
+
+		async function deleteSupplierInvoice(id) {
+			if (!confirm('¿Seguro que deseas eliminar esta factura?')) return;
+			try {
+				await deleteSupplierInvoice_API(id);
+				await renderSupplierInvoices();
+			} catch (err) {
+				alert(err.message);
+			}
+		}
+
+		async function openSupplierAbonoModal(id) {
+			const all = await loadSupplierInvoices();
+			const inv = all.find(x => x.id === id);
+			if (!inv) return;
+
+			const form = $('#form-supplier-abono');
+			form.reset();
+			form.invoiceId.value = id;
+			form.date.value = new Date().toISOString().slice(0, 10);
+
+			$('#abono-supplier-name').textContent = inv.supplier;
+			const paidTotal = (inv.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+			const balance = Number(inv.total || 0) - paidTotal;
+			$('#abono-current-balance').textContent = `$${balance.toLocaleString('es-CO')}`;
+
+			const history = $('#abonos-history-list');
+			history.innerHTML = '<div style="margin-bottom:6px;font-weight:600">Historial de abonos:</div>';
+			if (!inv.payments || inv.payments.length === 0) {
+				history.innerHTML += '<div class="small">Sin abonos previos.</div>';
+			} else {
+				inv.payments.forEach((p, idx) => {
+					history.innerHTML += `
+						<div class="abono-row small">
+							<span>${p.date}: $${Number(p.amount).toLocaleString('es-CO')}</span>
+							<button type="button" class="btn btn-delete" style="padding:2px 6px;font-size:10px" onclick="deleteSupplierAbono('${inv.id}', ${idx})">✕</button>
+						</div>
+					`;
+				});
+			}
+
+			$('#modal-supplier-abono').classList.add('show');
+		}
+
+		async function saveSupplierAbonoFromForm(e) {
+			e.preventDefault();
+			const form = e.target;
+			const id = form.invoiceId.value;
+			const amount = Number(form.amount.value);
+			const date = form.date.value;
+			const notes = form.notes.value;
+
+			showLoading('Registrando abono...');
+			try {
+				const all = await loadSupplierInvoices();
+				const inv = all.find(x => x.id === id);
+				if (!inv) throw new Error('Factura no encontrada');
+
+				if (!inv.payments) inv.payments = [];
+				inv.payments.push({ amount, date, notes });
+
+				await saveItem('supplier_invoices', inv);
+				// NO cerrar modal, recargar para ver el historial
+				await openSupplierAbonoModal(id);
+				await renderSupplierInvoices();
+			} catch (err) {
+				alert(err.message);
+			} finally {
+				hideLoading();
+			}
+		}
+
+		async function deleteSupplierAbono(invoiceId, abonoIdx) {
+			if (!confirm('¿Seguro que deseas eliminar este abono?')) return;
+			try {
+				const all = await loadSupplierInvoices();
+				const inv = all.find(x => x.id === invoiceId);
+				if (inv && inv.payments) {
+					inv.payments.splice(abonoIdx, 1);
+					await saveItem('supplier_invoices', inv);
+					await openSupplierAbonoModal(invoiceId);
+					await renderSupplierInvoices();
+				}
+			} catch (err) {
+				alert(err.message);
+			}
+		}
+
+		function viewFullImage(src) {
+			const overlay = document.createElement('div');
+			overlay.style.position = 'fixed';
+			overlay.style.inset = '0';
+			overlay.style.background = 'rgba(0,0,0,0.9)';
+			overlay.style.display = 'flex';
+			overlay.style.alignItems = 'center';
+			overlay.style.justifyContent = 'center';
+			overlay.style.zIndex = '99999';
+			overlay.style.cursor = 'zoom-out';
+
+			const img = document.createElement('img');
+			img.src = src;
+			img.style.maxWidth = '95vw';
+			img.style.maxHeight = '95vh';
+			img.style.borderRadius = '8px';
+			img.style.boxShadow = '0 0 30px rgba(0,0,0,0.5)';
+
+			overlay.appendChild(img);
+			overlay.onclick = () => document.body.removeChild(overlay);
+			document.body.appendChild(overlay);
 		}
 
 		/* NUEVO: abrir modal de factura */
