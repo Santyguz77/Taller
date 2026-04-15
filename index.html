@@ -2323,6 +2323,7 @@
 					<table id="supplier-invoices-table">
 						<thead>
 							<tr>
+								<th>ID</th>
 								<th>Proveedor</th>
 								<th>Fecha</th>
 								<th>Total</th>
@@ -2807,7 +2808,11 @@
 	<!-- NUEVO: Modal abono factura proveedor -->
 	<div class="modal" id="modal-supplier-abono">
 		<div class="panel" style="width: 400px">
-			<h3>Registrar Abono</h3>
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+				<h3 style="margin:0">Registrar Abono</h3>
+				<button type="button" onclick="closeModal('#modal-supplier-abono')"
+					style="background:transparent;border:1px solid rgba(255,255,255,.1);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted)">✕</button>
+			</div>
 			<form id="form-supplier-abono">
 				<input type="hidden" name="invoiceId">
 				<div
@@ -2829,7 +2834,7 @@
 				</div>
 				<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
 					<button type="button" class="btn" id="btn-close-supplier-abono"
-						style="background:#64707a">Cancelar</button>
+						style="background:#64707a">Salir / Cerrar</button>
 					<button type="submit" class="btn">Registrar Abono</button>
 				</div>
 			</form>
