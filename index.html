@@ -2377,7 +2377,23 @@
 					<div id="backup-status" style="margin-top:10px;font-size:13px;display:none"></div>
 				</div>
 
-				<div class="footer-note" style="margin-top:12px">Equipos guardados en hoja de vida por número de serie.
+				<div class="footer-note" style="margin-top:12px">Equipos guardados en hoja de vida por número de serie.</div>
+
+				<div class="card" style="margin-top:24px;border:1px solid rgba(59,180,255,0.2)">
+					<h3 style="color:#3bb4ff"><span class="material-icons-round" style="vertical-align:middle;margin-right:6px">settings_backup_restore</span> Gestión de Backups (Servidor)</h3>
+					<p class="small" style="margin-bottom:12px;color:var(--muted)">Si has perdido datos recientemente, intenta restaurar una de las copias automáticas del servidor.</p>
+					<div class="form-row" style="gap:8px">
+						<select id="backup-table-select" style="flex:1;background:#051a1f;border:1px solid rgba(255,255,255,0.1);color:#fff;padding:8px;border-radius:6px">
+							<option value="clients">Clientes</option>
+							<option value="orders">Órdenes</option>
+							<option value="invoices">Facturas</option>
+							<option value="inventory">Inventario</option>
+						</select>
+						<button class="btn" id="btn-list-server-backups" style="background:#3bb4ff;color:#05121a">Listar Backups</button>
+					</div>
+					<div id="server-backups-container" style="margin-top:12px;max-height:300px;overflow:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px">
+						<div class="small" style="color:var(--muted);text-align:center">Selecciona una tabla y pulsa "Listar"</div>
+					</div>
 				</div>
 			</section>
 
@@ -2788,9 +2804,16 @@
 				</div>
 				<div class="form-row" style="flex-direction:column;align-items:flex-start">
 					<label style="color:var(--muted);font-size:13px;margin-bottom:4px">Imagen de la factura:</label>
-					<input type="file" id="supplier-invoice-image-input" accept="image/*"
-						style="width:100%;padding:8px;border:1px dashed rgba(255,255,255,0.1);border-radius:6px;background:#051417;color:#eaf6f3">
-					<div id="supplier-invoice-image-preview" style="margin-top:8px"></div>
+					<div style="display:flex;gap:10px;width:100%;align-items:center">
+						<button type="button" class="btn" onclick="document.getElementById('supplier-invoice-image-input').click()" style="background:#3bb4ff;color:#05121a;flex:1">
+							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">image</span> Seleccionar/Cambiar Imagen
+						</button>
+						<button type="button" class="btn btn-delete" id="btn-remove-supplier-invoice-image" style="flex:1;display:none">
+							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">delete</span> Quitar Imagen
+						</button>
+					</div>
+					<input type="file" id="supplier-invoice-image-input" accept="image/*" style="display:none">
+					<div id="supplier-invoice-image-preview" style="margin-top:12px;width:100%;display:flex;justify-content:center"></div>
 					<input type="hidden" name="image" id="supplier-invoice-image-base64">
 				</div>
 				<div class="form-row">
@@ -3200,8 +3223,85 @@
 				}
 				else if (currentView === 'inventory') await renderInventory();
 				else if (currentView === 'invoices') await renderInvoices();
+				else if (currentView === 'supplier-invoices') await renderSupplierInvoices();
 			} catch (e) {
 				console.warn('Error al refrescar vista:', e);
+			}
+		}
+
+		// NUEVO: Gestión de backups del servidor
+		async function listServerBackups() {
+			const table = $('#backup-table-select').value;
+			const container = $('#server-backups-container');
+			container.innerHTML = '<div class="small" style="color:var(--accent);padding:10px;text-align:center">Cargando backups...</div>';
+
+			try {
+				const res = await fetch(`${API_BASE}/backups/${table}`);
+				if (!res.ok) throw new Error('Error al listar backups');
+				const backups = await res.json();
+
+				if (backups.length === 0) {
+					container.innerHTML = '<div class="small" style="color:var(--muted);padding:10px;text-align:center">No hay backups para esta tabla</div>';
+					return;
+				}
+
+				container.innerHTML = '';
+				// Ordenar por fecha descendente
+				backups.sort((a, b) => b.name.localeCompare(a.name));
+
+				backups.forEach(b => {
+					const div = document.createElement('div');
+					div.style.display = 'flex';
+					div.style.justifyContent = 'space-between';
+					div.style.alignItems = 'center';
+					div.style.padding = '10px';
+					div.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+					const date = b.timestamp.replace(/_/g, '-').replace('T', ' ').split('.')[0];
+					const name = b.name;
+
+					div.innerHTML = `
+						<div class="small">
+							<div style="color:#fff;font-weight:600">${date}</div>
+							<div style="font-size:10px;color:var(--muted)">${name}</div>
+						</div>
+						<button class="btn btn-restore-item" data-table="${table}" data-backup="${name}" style="background:var(--accent);color:#07121a;padding:6px 12px;font-size:11px;font-weight:bold">Restaurar</button>
+					`;
+					container.appendChild(div);
+				});
+
+				$$('.btn-restore-item').forEach(btn => {
+					btn.onclick = async () => {
+						const table = btn.dataset.table;
+						const backup = btn.dataset.backup;
+						if (confirm(`¿Estás seguro de restaurar esta copia de ${table} (${backup})? Los datos actuales serán reemplazados.`)) {
+							await restoreServerBackup(backup, table);
+						}
+					};
+				});
+
+			} catch (err) {
+				container.innerHTML = `<div class="small" style="color:#ff5b6b;padding:10px;text-align:center">Error: ${err.message}</div>`;
+			}
+		}
+
+		async function restoreServerBackup(backupTable, targetTable) {
+			try {
+				const res = await fetch(`${API_BASE}/restore/${backupTable}/${targetTable}`, { method: 'POST' });
+				if (!res.ok) {
+					const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+					throw new Error(errorData.error || 'Fallo en la restauración');
+				}
+				const result = await res.json();
+				alert(`✅ Restauración exitosa: ${result.restored} registros recuperados en ${targetTable}.`);
+
+				// Recargar la vista si es necesario
+				if (currentView === targetTable || currentView === 'dashboard') {
+					await renderView(currentView);
+				}
+			} catch (err) {
+				console.error('Error restaurando:', err);
+				alert(`❌ Error al restaurar: ${err.message}`);
 			}
 		}
 
@@ -3455,9 +3555,21 @@
 							document.getElementById('supplier-invoice-image-base64').value = base64;
 							const preview = document.getElementById('supplier-invoice-image-preview');
 							preview.innerHTML = `<img src="${base64}" class="supplier-invoice-img" style="width:150px;height:auto">`;
+							const btnRemove = document.getElementById('btn-remove-supplier-invoice-image');
+							if (btnRemove) btnRemove.style.display = 'block';
 						};
 						reader.readAsDataURL(file);
 					}
+				});
+			}
+
+			const btnRemoveSupInvImg = document.getElementById('btn-remove-supplier-invoice-image');
+			if (btnRemoveSupInvImg) {
+				btnRemoveSupInvImg.addEventListener('click', () => {
+					document.getElementById('supplier-invoice-image-base64').value = '';
+					document.getElementById('supplier-invoice-image-preview').innerHTML = '';
+					document.getElementById('supplier-invoice-image-input').value = '';
+					btnRemoveSupInvImg.style.display = 'none';
 				});
 			}
 
@@ -3488,6 +3600,10 @@
 					});
 				});
 			}
+
+			// NUEVO: binding gestión de backups del servidor
+			const btnListServerBackups = document.getElementById('btn-list-server-backups');
+			if (btnListServerBackups) btnListServerBackups.addEventListener('click', listServerBackups);
 		}
 
 		async function renderView(view) {
@@ -4995,34 +5111,57 @@
 		// Finanzas: renderizado de transacciones (asíncrono)
 		async function renderFinance() {
 			const tbody = $('#transactions-table tbody');
-			const items = await loadTransactions();
+			const txItems = await loadTransactions();
+			const supplierInvoices = await loadSupplierInvoices();
+
+			// Integrar abonos de proveedores como gastos
+			const supplierPayments = [];
+			supplierInvoices.forEach(inv => {
+				if (inv.payments && Array.isArray(inv.payments)) {
+					inv.payments.forEach(p => {
+						supplierPayments.push({
+							id: `sup_p_${inv.id}_${p.date}_${p.amount}`,
+							type: 'expense',
+							amount: Number(p.amount),
+							category: 'Proveedores',
+							date: p.date,
+							notes: `Abono a: ${inv.supplier} (Factura: ${inv.id})`,
+							isSupplierAbono: true
+						});
+					});
+				}
+			});
+
+			const allItems = [...txItems, ...supplierPayments].sort((a, b) => new Date(b.date) - new Date(a.date));
+
 			tbody.innerHTML = '';
 			let totalIncome = 0, totalExpense = 0;
 			const typeFilter = ($('#type-filter') && $('#type-filter').value) || '';
 			const categoryFilter = ($('#category-filter') && $('#category-filter').value) || '';
-			const filtered = items.filter(t => {
+			const filtered = allItems.filter(t => {
 				if (typeFilter && t.type !== typeFilter) return false;
 				if (categoryFilter && t.category !== categoryFilter) return false;
 				return true;
 			});
+
 			filtered.forEach(t => {
 				if (t.type === 'income') totalIncome += Number(t.amount || 0);
 				else totalExpense += Number(t.amount || 0);
 				const tr = document.createElement('tr');
 				tr.innerHTML = `
-					<td>${t.id}</td>
+					<td>${t.id.length > 20 ? '...' + t.id.slice(-6) : t.id}</td>
 					<td>${t.type === 'income' ? 'Ingreso' : 'Gasto'}</td>
 					<td>${formatCurrency(Number(t.amount || 0))}</td>
 					<td>${escapeHtml(t.category || '')}</td>
 					<td>${t.date || ''}</td>
 					<td>${escapeHtml(t.notes || '')}</td>
 					<td>
-						<button class="btn btn-delete" data-id="${t.id}">Eliminar</button>
+						${t.isSupplierAbono ? '<span class="small" style="color:var(--muted)">Eliminar en Prov.</span>' : `<button class="btn btn-delete" data-id="${t.id}">Eliminar</button>`}
 					</td>
 				`;
 				tbody.appendChild(tr);
 			});
-			$$('#transactions-table .btn-delete').forEach(b => b.onclick = async () => { if (confirm('Eliminar transacción?')) await deleteTransaction(b.dataset.id) });
+			$$('#transactions-table .btn-delete').forEach(b => b.onclick = async () => { if (confirm('¿Eliminar transacción?')) await deleteTransaction(b.dataset.id) });
 
 			// Renderizar tarjetas para móvil
 			const cardsContainer = $('#transactions-cards-container');
@@ -5046,7 +5185,7 @@
 							${t.notes ? `<div class="data-card-row"><span class="label">📝 Notas:</span><span class="value">${escapeHtml(t.notes)}</span></div>` : ''}
 						</div>
 						<div class="data-card-actions">
-							<button class="btn btn-delete card-btn-delete" data-id="${t.id}">🗑️ Eliminar</button>
+							${t.isSupplierAbono ? '<span class="small" style="color:var(--muted)">Usa la sección de Proveedores para gestionar este pago</span>' : `<button class="btn btn-delete card-btn-delete" data-id="${t.id}">🗑️ Eliminar</button>`}
 						</div>
 					`;
 					cardsContainer.appendChild(card);
@@ -5059,6 +5198,7 @@
 			if (summary) summary.textContent = `Ingresos: ${formatCurrency(totalIncome)} — Gastos: ${formatCurrency(totalExpense)} — Saldo: ${formatCurrency(balance)}`;
 			await computeMetrics();
 		}
+
 
 		async function saveTransactionFromForm(e) {
 			e.preventDefault();
@@ -5351,16 +5491,29 @@
 
 		// nuevas métricas (async)
 		async function computeMetrics() {
-			const tx = await loadTransactions();
+			const txItems = await loadTransactions();
+			const supplierInvoices = await loadSupplierInvoices();
 			const orders = await loadOrders();
 			const clients = await loadClients();
+
 			let income = 0, expense = 0;
-			tx.forEach(t => {
+			// 1. Transacciones normales
+			txItems.forEach(t => {
 				if (t.type === 'income') income += Number(t.amount || 0);
 				else expense += Number(t.amount || 0);
 			});
+
+			// 2. Abonos de proveedores (Gastos extra)
+			let supplierDebt = 0;
+			supplierInvoices.forEach(inv => {
+				const total = Number(inv.total || 0);
+				const paid = (inv.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+				expense += paid; // Los abonos ya realizados son gastos de caja
+				supplierDebt += (total - paid); // Lo que falta por pagar es deuda
+			});
+
 			const balance = income - expense;
-			const txCount = tx.length;
+			const txCount = txItems.length;
 			const avgTx = txCount ? ((income + expense) / txCount) : 0;
 			const statusCounts = {};
 			Object.keys(ORDER_STATUSES).forEach(k => statusCounts[k] = 0);
@@ -5375,16 +5528,20 @@
 			if (!container) return;
 			container.innerHTML = `
 				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
-					<div class="small">Ingresos</div>
-					<div style="font-weight:700">${formatCurrency(income)}</div>
+					<div class="small">Ingresos Totales</div>
+					<div style="font-weight:700;color:#7af0a5">${formatCurrency(income)}</div>
 				</div>
 				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
-					<div class="small">Gastos</div>
-					<div style="font-weight:700">${formatCurrency(expense)}</div>
+					<div class="small">Gastos Totales</div>
+					<div style="font-weight:700;color:#ff6b6b">${formatCurrency(expense)}</div>
+				</div>
+				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px;border:1px solid rgba(255,107,107,0.3)">
+					<div class="small">Deuda Proveedores</div>
+					<div style="font-weight:700;color:#ffcc33">${formatCurrency(supplierDebt)}</div>
 				</div>
 				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
-					<div class="small">Saldo</div>
-					<div style="font-weight:700">${formatCurrency(balance)}</div>
+					<div class="small">Saldo en Caja</div>
+					<div style="font-weight:700;color:var(--accent)">${formatCurrency(balance)}</div>
 				</div>
 				<div style="background:#071b22;padding:10px;border-radius:8px;min-width:140px">
 					<div class="small">Transacciones</div>
@@ -5809,6 +5966,8 @@
 			form.reset();
 			$('#supplier-invoice-image-preview').innerHTML = '';
 			$('#supplier-invoice-image-base64').value = '';
+			const btnRemove = $('#btn-remove-supplier-invoice-image');
+			if (btnRemove) btnRemove.style.display = 'none';
 
 			if (id) {
 				const all = await loadSupplierInvoices();
@@ -5821,6 +5980,8 @@
 					if (inv.image) {
 						$('#supplier-invoice-image-base64').value = inv.image;
 						$('#supplier-invoice-image-preview').innerHTML = `<img src="${inv.image}" class="supplier-invoice-img" style="width:150px;height:auto;cursor:default">`;
+						const btnR = $('#btn-remove-supplier-invoice-image');
+						if (btnR) btnR.style.display = 'block';
 					}
 					$('#modal-supplier-invoice-title').textContent = 'Editar factura de proveedor';
 				}
@@ -5857,6 +6018,7 @@
 				await saveItem('supplier_invoices', data);
 				closeModal('#modal-supplier-invoice');
 				await renderSupplierInvoices();
+				await renderFinance();
 			} catch (err) {
 				alert(err.message);
 			} finally {
@@ -5869,6 +6031,7 @@
 			try {
 				await deleteSupplierInvoice_API(id);
 				await renderSupplierInvoices();
+				await renderFinance();
 			} catch (err) {
 				alert(err.message);
 			}
@@ -5928,6 +6091,7 @@
 				// NO cerrar modal, recargar para ver el historial
 				await openSupplierAbonoModal(id);
 				await renderSupplierInvoices();
+				await renderFinance();
 			} catch (err) {
 				alert(err.message);
 			} finally {
@@ -5945,6 +6109,7 @@
 					await saveItem('supplier_invoices', inv);
 					await openSupplierAbonoModal(invoiceId);
 					await renderSupplierInvoices();
+					await renderFinance();
 				}
 			} catch (err) {
 				alert(err.message);
