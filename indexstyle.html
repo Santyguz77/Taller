@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mipc Computadores Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#a3e635", // Vibrant Lime Green
+                        secondary: "#22d3ee", // Cyan accent
+                        "background-light": "#f8fafc", 
+                        "background-dark": "#0f172a", // Slate-900 (Deep Navy)
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b", // Slate-800
+                        "surface-darker": "#020617", // Slate-950
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem", // 12px
+                        xl: "1rem", // 16px
+                        "2xl": "1.5rem", // 24px
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px rgba(163, 230, 53, 0.25)',
+                        'glow-cyan': '0 0 20px rgba(34, 211, 238, 0.25)',
+                    }
+                },
+            },
+        };
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 transition-colors duration-300 min-h-screen relative pb-32">
+<header class="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex justify-between items-center">
+<div>
+<h1 class="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">Mipc Computadores</h1>
+<h2 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Business Hub</h2>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative">
+<button class="w-10 h-10 rounded-full bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+<span class="material-icons-round">notifications</span>
+<span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
+</button>
+</div>
+<div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-green-600 p-0.5">
+<img alt="User" class="w-full h-full rounded-full object-cover border-2 border-background-light dark:border-background-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA75P5exa0GpHJsC-kXt1hA2bc05KQNZcYphoAl5nzOvohNlET69RzqgT99elO1Eix3FO9VEUxXW-Do0Vrh8dHl-gIqebrbjB87F_GD4_ZPQ5yeU-nfCjGKnGGRXRGR9uxRQulOabDTllkZHhEn6p2-cebUvpqL2ShLt8X1rW53Pyfk5bi66lr21RaH9Wy7Ix2ACSpCxZ10JJ18olG4ER-oy-kx_FkrI7o_NjsAmbw0djhwrgbBjNvuN67NJcXWQ_GKUmQd1e2_ITM"/>
+</div>
+</div>
+</header>
+<main class="px-5 pt-6 space-y-8">
+<section>
+<div class="flex justify-between items-end mb-4">
+<h3 class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Actividad Diaria</h3>
+<span class="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Hoy, 24 Oct</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center text-center">
+<span class="text-xs text-slate-500 mb-1">Pedidos</span>
+<span class="text-2xl font-bold text-slate-800 dark:text-white">12</span>
+<div class="flex items-center text-[10px] text-green-500 font-medium mt-1">
+<span class="material-icons-round text-[12px]">arrow_upward</span> 2
+                    </div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center text-center relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/5"></div>
+<span class="text-xs text-slate-500 mb-1 z-10">Ventas</span>
+<span class="text-xl font-bold text-slate-800 dark:text-white z-10">$1.2k</span>
+<div class="flex items-center text-[10px] text-green-500 font-medium mt-1 z-10">
+<span class="material-icons-round text-[12px]">arrow_upward</span> 15%
+                    </div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center text-center">
+<span class="text-xs text-slate-500 mb-1">Pendientes</span>
+<span class="text-2xl font-bold text-slate-800 dark:text-white">5</span>
+<div class="flex items-center text-[10px] text-orange-400 font-medium mt-1">
+<span class="material-icons-round text-[12px]">priority_high</span> Urgente
+                    </div>
+</div>
+</div>
+</section>
+<section>
+<h3 class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Módulos de Gestión</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="group bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+<div class="absolute right-0 top-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+<span class="material-icons-round">receipt_long</span>
+</div>
+<h4 class="text-base font-semibold text-slate-800 dark:text-white">Órdenes</h4>
+<p class="text-xs text-slate-500 mt-1">Gestionar pedidos</p>
+</div>
+<div class="group bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+<div class="absolute right-0 top-0 w-24 h-24 bg-purple-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center mb-3 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+<span class="material-icons-round">people</span>
+</div>
+<h4 class="text-base font-semibold text-slate-800 dark:text-white">Clientes</h4>
+<p class="text-xs text-slate-500 mt-1">Base de datos</p>
+</div>
+<div class="group bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+<div class="absolute right-0 top-0 w-24 h-24 bg-pink-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="w-10 h-10 rounded-lg bg-pink-500/10 text-pink-500 flex items-center justify-center mb-3 group-hover:bg-pink-500 group-hover:text-white transition-colors">
+<span class="material-icons-round">description</span>
+</div>
+<h4 class="text-base font-semibold text-slate-800 dark:text-white">Facturas</h4>
+<p class="text-xs text-slate-500 mt-1">Historial y emisión</p>
+</div>
+<div class="group bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+<div class="absolute right-0 top-0 w-24 h-24 bg-primary/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="w-10 h-10 rounded-lg bg-primary/20 text-lime-600 dark:text-primary flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-slate-900 transition-colors">
+<span class="material-icons-round">payments</span>
+</div>
+<h4 class="text-base font-semibold text-slate-800 dark:text-white">Finanzas</h4>
+<p class="text-xs text-slate-500 mt-1">Ingresos y gastos</p>
+</div>
+<div class="group bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+<div class="absolute right-0 top-0 w-24 h-24 bg-orange-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center mb-3 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+<span class="material-icons-round">inventory_2</span>
+</div>
+<h4 class="text-base font-semibold text-slate-800 dark:text-white">Inventario</h4>
+<p class="text-xs text-slate-500 mt-1">Stock y productos</p>
+</div>
+<div class="group bg-surface-light dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+<div class="absolute right-0 top-0 w-24 h-24 bg-slate-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:bg-slate-600 group-hover:text-white transition-colors">
+<span class="material-icons-round">settings</span>
+</div>
+<h4 class="text-base font-semibold text-slate-800 dark:text-white">Config</h4>
+<p class="text-xs text-slate-500 mt-1">Sistema y ajustes</p>
+</div>
+</div>
+</section>
+<section class="pb-6">
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex items-center justify-between mb-3">
+<h4 class="font-medium text-slate-700 dark:text-slate-200 text-sm">Resumen de Inventario</h4>
+<span class="text-xs text-slate-400">Actualizado hace 5m</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative w-16 h-16 flex-shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-slate-200 dark:text-slate-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="75, 100" stroke-width="4"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center flex-col">
+<span class="text-xs font-bold text-slate-800 dark:text-white">75%</span>
+</div>
+</div>
+<div class="flex-1 space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-500 dark:text-slate-400">En Stock</span>
+<span class="font-medium text-slate-800 dark:text-white">1,240</span>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 75%"></div>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-500 dark:text-slate-400">Bajo Stock</span>
+<span class="font-medium text-orange-400">12 items</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-24 right-5 z-40">
+<button class="bg-primary hover:bg-lime-400 text-slate-900 shadow-glow rounded-full px-5 py-3.5 flex items-center gap-2 transition-all active:scale-95 font-semibold">
+<span class="material-icons-round text-xl">add</span>
+<span>Nueva Orden</span>
+</button>
+</div>
+<nav class="fixed bottom-0 w-full bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 pb-safe pt-2 z-50">
+<div class="flex justify-around items-center px-2 pb-2">
+<a class="flex flex-col items-center p-2 text-primary" href="#">
+<span class="material-icons-round text-2xl mb-0.5">dashboard</span>
+<span class="text-[10px] font-medium">Inicio</span>
+</a>
+<a class="flex flex-col items-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition" href="#">
+<span class="material-icons-round text-2xl mb-0.5">receipt_long</span>
+<span class="text-[10px] font-medium">Órdenes</span>
+</a>
+<a class="flex flex-col items-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition" href="#">
+<span class="material-icons-round text-2xl mb-0.5">payments</span>
+<span class="text-[10px] font-medium">Finanzas</span>
+</a>
+<a class="flex flex-col items-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition" href="#">
+<span class="material-icons-round text-2xl mb-0.5">settings</span>
+<span class="text-[10px] font-medium">Ajustes</span>
+</a>
+</div>
+</nav>
+
+</body></html>

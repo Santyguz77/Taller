@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>MiPC Premium Product Details</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;family=Playfair+Display:wght@600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11d473",
+                        "secondary": "#114d3a", // Deep forest green derivative
+                        "accent-gold": "#d4b111", // Gold for 'New Arrival'
+                        "background-light": "#f6f8f7",
+                        "background-dark": "#102219",
+                        "neutral-surface": "#eef2f0",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "serif": ["Playfair Display", "serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'floating': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col antialiased selection:bg-primary/30">
+    <!-- Top Navigation -->
+    <header
+        class="fixed top-0 left-0 right-0 z-50 px-4 py-2 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md transition-colors duration-300">
+        <div class="flex items-center justify-between h-14 max-w-lg mx-auto w-full">
+            <button
+                class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-900 dark:text-slate-100">
+                <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+            </button>
+            <div class="flex items-center gap-2">
+                <button
+                    class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-900 dark:text-slate-100 relative">
+                    <span class="material-symbols-outlined text-[24px]">shopping_bag</span>
+                    <span
+                        class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-2 ring-background-light dark:ring-background-dark"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- Main Content Area -->
+    <main class="flex-grow pt-20 pb-32 max-w-lg mx-auto w-full">
+        <!-- Hero Image Section -->
+        <div class="@container px-4 mb-6">
+            <div class="relative w-full aspect-[4/5] rounded-2xl overflow-hidden shadow-soft group">
+                <!-- Image Background -->
+                <div class="absolute inset-0 bg-neutral-surface dark:bg-white/5 transition-colors"></div>
+                <!-- Product Image -->
+                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                    data-alt="Premium yellow soccer jersey on grey background"
+                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzGnTCC2DLZ3yAmlcWKIcXaD3EIClIxv7-X370nNfhplxFn0FQE7lahUI6Afjj8ZrLD9UqVx37cHBfAjQFY_UBqbewP0bRJZUJHqU9dLku01wQf5cD7FizAYMA1ey0lxnaetTDRFgnKIHAlqQfCAS70b3gqnxR4SNarRwphsLQtirPXgHXpmz4W-Hof5VFBLtG5C4986_1T0mSAEf2ZZKe_LBhrmHH4bCxjmFnV3bZ0vQT-b8lCrVaWP_ZHRZulvIuzYYPkVEPUM0v');">
+                </div>
+                <!-- Gradient Overlay for Contrast -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60">
+                </div>
+                <!-- Pagination Dots (Overlay) -->
+                <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+                    <div class="w-8 h-1.5 rounded-full bg-white shadow-sm cursor-pointer"></div>
+                    <div
+                        class="w-1.5 h-1.5 rounded-full bg-white/50 backdrop-blur-sm cursor-pointer hover:bg-white/80 transition-colors">
+                    </div>
+                    <div
+                        class="w-1.5 h-1.5 rounded-full bg-white/50 backdrop-blur-sm cursor-pointer hover:bg-white/80 transition-colors">
+                    </div>
+                    <div
+                        class="w-1.5 h-1.5 rounded-full bg-white/50 backdrop-blur-sm cursor-pointer hover:bg-white/80 transition-colors">
+                    </div>
+                </div>
+                <!-- Favorite Action Button on Image -->
+                <button
+                    class="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex items-center justify-center text-white hover:bg-white hover:text-red-500 transition-all active:scale-95 shadow-sm">
+                    <span class="material-symbols-outlined fill-current">favorite</span>
+                </button>
+            </div>
+        </div>
+        <!-- Product Information -->
+        <div class="px-6 flex flex-col gap-4">
+            <!-- Badges & Rating -->
+            <div class="flex items-center justify-between">
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-gold/10 border border-accent-gold/20 text-accent-gold dark:text-yellow-400 text-xs font-bold tracking-wider uppercase">
+                    <span class="w-1.5 h-1.5 rounded-full bg-accent-gold animate-pulse"></span>
+                    New Arrival
+                </span>
+                <button
+                    class="flex items-center gap-1 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-[18px] text-yellow-500 fill-current"
+                        style="font-variation-settings: 'FILL' 1">star</span>
+                    4.8 <span
+                        class="text-slate-400 font-normal underline decoration-slate-300 dark:decoration-slate-600 underline-offset-2 ml-1">(128
+                        Reviews)</span>
+                </button>
+            </div>
+            <!-- Title & Price -->
+            <div class="space-y-1">
+                <h1 class="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white leading-tight">
+                    Camiseta Oficial <br /> Bucaramanga 2024
+                </h1>
+                <div class="flex items-baseline gap-3 pt-1">
+                    <span class="text-2xl font-bold text-secondary dark:text-primary">$289.000</span>
+                    <span class="text-lg text-slate-400 line-through">$320.000</span>
+                </div>
+            </div>
+            <!-- Description -->
+            <p class="text-slate-500 dark:text-slate-400 text-base leading-relaxed">
+                Experience the pride of Bucaramanga with the official 2024 kit. Crafted with breathable,
+                moisture-wicking technology for elite performance on and off the pitch. Elegant gold accents meet
+                traditional yellow.
+            </p>
+            <div class="h-px w-full bg-slate-200 dark:bg-slate-700 my-2"></div>
+            <!-- Size Selector -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-900 dark:text-slate-100">Select Size
+                    </h3>
+                    <button
+                        class="text-sm text-primary hover:text-primary/80 font-medium underline underline-offset-4">Size
+                        Guide</button>
+                </div>
+                <div class="flex gap-4">
+                    <label class="group cursor-pointer">
+                        <input checked="" class="peer sr-only" name="size" type="radio" />
+                        <div
+                            class="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium peer-checked:bg-secondary peer-checked:text-white peer-checked:border-secondary dark:peer-checked:bg-primary dark:peer-checked:text-slate-900 dark:peer-checked:border-primary transition-all shadow-sm hover:border-secondary/50">
+                            S
+                        </div>
+                    </label>
+                    <label class="group cursor-pointer">
+                        <input class="peer sr-only" name="size" type="radio" />
+                        <div
+                            class="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium peer-checked:bg-secondary peer-checked:text-white peer-checked:border-secondary dark:peer-checked:bg-primary dark:peer-checked:text-slate-900 dark:peer-checked:border-primary transition-all shadow-sm hover:border-secondary/50">
+                            M
+                        </div>
+                    </label>
+                    <label class="group cursor-pointer">
+                        <input class="peer sr-only" name="size" type="radio" />
+                        <div
+                            class="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium peer-checked:bg-secondary peer-checked:text-white peer-checked:border-secondary dark:peer-checked:bg-primary dark:peer-checked:text-slate-900 dark:peer-checked:border-primary transition-all shadow-sm hover:border-secondary/50">
+                            L
+                        </div>
+                    </label>
+                    <label class="group cursor-pointer">
+                        <input class="peer sr-only" name="size" type="radio" />
+                        <div
+                            class="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium peer-checked:bg-secondary peer-checked:text-white peer-checked:border-secondary dark:peer-checked:bg-primary dark:peer-checked:text-slate-900 dark:peer-checked:border-primary transition-all shadow-sm hover:border-secondary/50">
+                            XL
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <!-- Color Variation (Optional extra for completeness) -->
+            <div class="space-y-3 mt-2">
+                <h3 class="text-sm font-bold uppercase tracking-wide text-slate-900 dark:text-slate-100">Colors</h3>
+                <div class="flex gap-3">
+                    <button
+                        class="w-8 h-8 rounded-full bg-[#FFD700] ring-2 ring-offset-2 ring-secondary dark:ring-offset-background-dark ring-offset-background-light shadow-sm"></button>
+                    <button
+                        class="w-8 h-8 rounded-full bg-white border border-slate-200 hover:scale-110 transition-transform"></button>
+                    <button
+                        class="w-8 h-8 rounded-full bg-secondary border border-transparent hover:scale-110 transition-transform"></button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Bottom Action Bar (Fixed) -->
+    <div
+        class="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 z-40">
+        <div class="max-w-lg mx-auto flex gap-4 items-center">
+            <button
+                class="flex-shrink-0 w-14 h-14 rounded-2xl bg-neutral-surface dark:bg-white/5 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                <span class="material-symbols-outlined text-[24px]">chat_bubble</span>
+            </button>
+            <button
+                class="flex-grow h-14 rounded-2xl bg-secondary hover:bg-secondary/90 dark:bg-primary dark:hover:bg-primary/90 text-white dark:text-slate-900 font-bold text-lg shadow-lg shadow-secondary/20 dark:shadow-primary/20 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
+                <span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+                Add to Cart
+            </button>
+        </div>
+    </div>
+</body>
+
+</html>

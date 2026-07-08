@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>MiPC Premium Shopping Cart</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts: Newsreader -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11d473",
+                        "primary-dark": "#0ea65a",
+                        "background-light": "#ffffff",
+                        "background-subtle": "#f9fafb",
+                        "background-dark": "#102219",
+                        "text-main": "#111814",
+                        "text-muted": "#618975",
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader", "serif"],
+                        "sans": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Noto Sans", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .font-display {
+            font-family: "Newsreader", serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white min-h-screen flex flex-col">
+    <div
+        class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto shadow-2xl bg-white">
+        <!-- Header -->
+        <header class="flex items-center justify-between px-6 py-5 bg-white sticky top-0 z-10 border-b border-gray-100">
+            <button class="p-2 -ml-2 text-text-main hover:bg-gray-50 rounded-full transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h1 class="text-2xl font-bold font-display tracking-tight text-text-main">Tu Carrito (3)</h1>
+            <button class="p-2 -mr-2 text-text-main hover:bg-gray-50 rounded-full transition-colors">
+                <span class="material-symbols-outlined">more_horiz</span>
+            </button>
+        </header>
+        <!-- Product List -->
+        <div class="flex-1 overflow-y-auto pb-6">
+            <!-- Item 1 -->
+            <div class="flex gap-4 p-6 border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
+                <div class="shrink-0 relative">
+                    <div class="h-24 w-24 rounded-lg bg-gray-100 overflow-hidden shadow-sm">
+                        <img alt="Soccer Jersey Green" class="w-full h-full object-cover"
+                            data-alt="Green sporty soccer jersey on hanger"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRfmcNWTmv2UZGQdH0gal7XrfnBT09HlUDObqSaM7RsWubDpOJhRDN-ajKfr2TSyplImE-ywFxU0q8VA_hBIGb2-ANcIkgDPXpziBbD1U_r_XEnRbxq_npjjB-Nc-dCh67YKnxmVZyqF8VeqLb9pE0ybrE4bJGMORWlFx-ufssM-gRFjKcjBIUWSkQn058_2sIlx8REOQ5khPI4xybo5HaGmEVgeXYwe9kG-Ff9qvIm5V4eamBxJa-_mDZbKZ32EDOHESRlVQk8y67" />
+                    </div>
+                </div>
+                <div class="flex flex-1 flex-col justify-between py-1">
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <h3 class="text-lg font-medium font-display leading-tight text-text-main">Camiseta Oficial
+                                Bucaramanga</h3>
+                            <button class="text-gray-400 hover:text-red-500 transition-colors p-1 -mr-1">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </div>
+                        <p class="text-sm text-text-muted mt-1">Talla: M</p>
+                    </div>
+                    <div class="flex items-end justify-between mt-3">
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg h-9">
+                            <button
+                                class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">remove</span>
+                            </button>
+                            <span class="w-8 text-center text-sm font-semibold text-text-main font-display">1</span>
+                            <button
+                                class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                        </div>
+                        <span class="text-lg font-bold text-primary font-display">$180.000</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Item 2 -->
+            <div class="flex gap-4 p-6 border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
+                <div class="shrink-0 relative">
+                    <div class="h-24 w-24 rounded-lg bg-gray-100 overflow-hidden shadow-sm">
+                        <img alt="Mechanical Keyboard" class="w-full h-full object-cover"
+                            data-alt="RGB Mechanical Keyboard on desk"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdwhmKQKgWcuuUoLm8yqoKm94Y_f6POPLCVutilmnrflkm0kL0HwMF8iZMVtgwF82PN4Ylf6mIktktdYrLOVpfsHfmQu8ZVXMA_djC5juh7uomTyZgnOpfBLGnt1aUelsvlC6cdeXcNKw6_X2soAXAZwqoSQ7dnsBypff5gAhpMIxwe8VN2W1V_D9WVHylTRMhd9WRZ75HrrQiNC-kpwBR5qFVqrsUt0v5d0fN8mzvm-9sO_qzvI2fUu8VSvSqhoq12GKWTgh-_WTI" />
+                    </div>
+                </div>
+                <div class="flex flex-1 flex-col justify-between py-1">
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <h3 class="text-lg font-medium font-display leading-tight text-text-main">Teclado Mecánico
+                                RGB</h3>
+                            <button class="text-gray-400 hover:text-red-500 transition-colors p-1 -mr-1">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </div>
+                        <p class="text-sm text-text-muted mt-1">Switch: Blue</p>
+                    </div>
+                    <div class="flex items-end justify-between mt-3">
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg h-9">
+                            <button
+                                class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">remove</span>
+                            </button>
+                            <span class="w-8 text-center text-sm font-semibold text-text-main font-display">1</span>
+                            <button
+                                class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                        </div>
+                        <span class="text-lg font-bold text-primary font-display">$320.000</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Item 3 -->
+            <div class="flex gap-4 p-6 border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
+                <div class="shrink-0 relative">
+                    <div class="h-24 w-24 rounded-lg bg-gray-100 overflow-hidden shadow-sm">
+                        <img alt="Running Shoes" class="w-full h-full object-cover"
+                            data-alt="Red sport running shoe product shot"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMmcThl29TcYdjfz8T6iIDMELamwJXXVMPX1JHMXZebQ5Sipa4FiKppINrXBmJUAn0lAPS0FQkoPV7GjfCYKbmKg-caiiKMqjQF6qnwsn5X_NAghsQEbGFc8wOf8zzFn0wyvMMZ35hEjhTDZZ8pofMHVC6_hIiM3aY2N342STCe9BfeXLXnD20zHv9f16cU3X8qyhRQVBlfL5ucD9a-WN1WjCqPIQk5NnDB_TaFqewm5nL8Sz_JHT4Ir6AQfy2ocv9HHWu3FEMrIyZ" />
+                    </div>
+                </div>
+                <div class="flex flex-1 flex-col justify-between py-1">
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <h3 class="text-lg font-medium font-display leading-tight text-text-main">Zapatillas Running
+                                Pro</h3>
+                            <button class="text-gray-400 hover:text-red-500 transition-colors p-1 -mr-1">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </div>
+                        <p class="text-sm text-text-muted mt-1">Talla: 42 EU</p>
+                    </div>
+                    <div class="flex items-end justify-between mt-3">
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg h-9">
+                            <button
+                                class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">remove</span>
+                            </button>
+                            <span class="w-8 text-center text-sm font-semibold text-text-main font-display">1</span>
+                            <button
+                                class="w-8 h-full flex items-center justify-center text-gray-500 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                        </div>
+                        <span class="text-lg font-bold text-primary font-display">$250.000</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Order Summary -->
+            <div class="mt-4 mx-4 p-6 bg-background-subtle rounded-xl border border-gray-100">
+                <h3 class="text-base font-semibold font-display text-text-main mb-4 border-b border-gray-200 pb-2">
+                    Resumen del Pedido</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-text-muted">Subtotal</span>
+                        <span class="font-medium text-text-main">$750.000</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-text-muted">Envío</span>
+                        <span
+                            class="font-medium text-text-main italic text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">Calculado
+                            en checkout</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-text-muted">Impuestos</span>
+                        <span class="font-medium text-text-main">$0.00</span>
+                    </div>
+                    <div class="pt-4 mt-2 border-t border-gray-200 flex justify-between items-end">
+                        <span class="text-base font-medium text-text-main">Total</span>
+                        <span class="text-2xl font-bold font-display text-green-900">$750.000</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Payment Methods Trust -->
+            <div class="px-6 py-6">
+                <div
+                    class="flex items-center justify-center gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-300">
+                    <div class="h-8 flex items-center" title="Visa">
+                        <img alt="Visa Logo" class="h-full w-auto" data-alt="Visa payment logo"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-rmYcmtjtRQHDXyPsHBSPFK1scXZYHQX4QCHuAj15Ds8zC3FRagwG04vn2AGtq78SSuGZBPeVDGtt--G5Vs9gZ-mbrBSDuwDmZTruPGe-CBL5TY-3AEV34mXRJSbLePbv5ZhQ-UzJ4Hb_ruk1AvjNOy-W-QyqzsFxrmOIfhzFNmboJc0y5-rmljqQK66qo72sHtuKU5zQyO3JZS832zUfv_zYHhp3dcXz0ZCnaMVjhiDGdk8ytpcSDlHrlSB--r10_XNFsOiEe_ud" />
+                    </div>
+                    <div class="h-8 flex items-center" title="Mastercard">
+                        <img alt="Mastercard Logo" class="h-full w-auto" data-alt="Mastercard payment logo"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuANyRDmvIn8FFwu6GfZ26bY72NORetb-eEjNRxS6fX-j9B-NeQi45uygEHhIn7X89xt3tn36pN86_e8CKSB13mQvBqRmCK2WQrBDLAFAkjhUHHWY5MCfMfva7NyGW_ps51xZiVPujoNfIKrznXZCVM8-W598wMR1WEU0VNYyXpNkYESib1xCAvr4qSVB-gvniQ68GFBlWWF-FEZGKGFAy2dFv4qcHxaJ-vIS5KartYizQcudHssKYlrlfCd0z8ApoVNpL7H08k_-QPd" />
+                    </div>
+                    <div class="h-8 flex items-center" title="PayPal">
+                        <img alt="Paypal Logo" class="h-full w-auto" data-alt="Paypal payment logo"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0orTLXG_1h4Dj3CnFvEFtL4LtUWSxmofuaGRhIa7RxlQK7LyDCjFAiLR5ZHtVmcSz2EdumJfkaix_ioUi9ip7teJULq3QbACLAhGKTy-AbvbKFxWBP97swj3NgQJXObet44U-0DAp07s2lHW1nVQOHx9vHy7mIISqZutXljdqBhZkT_joJeZqqyPIcGZ56fLnGxd37aNpkhCI6oAYQRc_AOk5t3aM7dBLFyeeVIA7wUef7tkhtdiQTXu0YNqJZq7chb3Ew7t5pF0n" />
+                    </div>
+                </div>
+                <p class="text-center text-xs text-gray-400 mt-2 flex items-center justify-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">lock</span>
+                    Pagos 100% seguros y encriptados
+                </p>
+            </div>
+            <div class="h-24"></div> <!-- Spacer for bottom nav/button -->
+        </div>
+        <!-- Sticky Checkout Button Area -->
+        <div
+            class="fixed bottom-[72px] left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent max-w-md mx-auto">
+            <button
+                class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-4 px-6 rounded-xl shadow-lg shadow-primary/30 flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]">
+                <span class="material-symbols-outlined">lock</span>
+                <span class="text-lg">Continuar al Pago</span>
+            </button>
+        </div>
+        <!-- Bottom Navigation Bar -->
+        <div
+            class="border-t border-[#f0f4f2] bg-white px-4 pb-3 pt-2 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20">
+            <div class="flex gap-2">
+                <a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#618975] hover:text-primary transition-colors"
+                    href="#">
+                    <div class="text-[#618975] hover:text-primary flex h-8 items-center justify-center">
+                        <span class="material-symbols-outlined text-[24px]">home</span>
+                    </div>
+                    <p class="text-current text-xs font-medium leading-normal tracking-[0.015em]">Inicio</p>
+                </a>
+                <a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#618975] hover:text-primary transition-colors"
+                    href="#">
+                    <div class="text-[#618975] hover:text-primary flex h-8 items-center justify-center">
+                        <span class="material-symbols-outlined text-[24px]">storefront</span>
+                    </div>
+                    <p class="text-current text-xs font-medium leading-normal tracking-[0.015em]">Tienda</p>
+                </a>
+                <a class="just flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-text-main"
+                    href="#">
+                    <div class="text-text-main flex h-8 items-center justify-center relative">
+                        <span
+                            class="material-symbols-outlined text-[24px] font-variation-settings-fill">shopping_cart</span>
+                        <span
+                            class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">3</span>
+                    </div>
+                    <p class="text-current text-xs font-medium leading-normal tracking-[0.015em]">Carrito</p>
+                </a>
+                <a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#618975] hover:text-primary transition-colors"
+                    href="#">
+                    <div class="text-[#618975] hover:text-primary flex h-8 items-center justify-center">
+                        <span class="material-symbols-outlined text-[24px]">person</span>
+                    </div>
+                    <p class="text-current text-xs font-medium leading-normal tracking-[0.015em]">Perfil</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

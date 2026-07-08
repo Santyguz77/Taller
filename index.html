@@ -32,6 +32,135 @@
 			--card: #0f172a;
 		}
 
+		/* Estilos para el custom-select (Selector de clientes premium) */
+		.custom-select-container {
+			position: relative;
+			flex: 1;
+			min-width: 0;
+		}
+		.custom-select-trigger {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 8px 12px;
+			background: #052026;
+			border: 1px solid rgba(255, 255, 255, 0.04);
+			border-radius: 6px;
+			color: #dfeef2;
+			cursor: pointer;
+			font-size: 14px;
+			transition: all 0.2s ease;
+			user-select: none;
+			min-height: 38px;
+			box-sizing: border-box;
+		}
+		.custom-select-trigger:hover {
+			border-color: var(--accent);
+			background: rgba(163, 230, 53, 0.04);
+		}
+		.custom-select-trigger.active {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.15);
+		}
+		.custom-select-text {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			margin-right: 8px;
+		}
+		.custom-select-container .dropdown-icon {
+			font-size: 20px;
+			color: var(--muted);
+			transition: transform 0.2s ease;
+		}
+		.custom-select-trigger.active .dropdown-icon {
+			transform: rotate(180deg);
+			color: var(--accent);
+		}
+		.custom-select-dropdown {
+			position: absolute;
+			top: calc(100% + 4px);
+			left: 0;
+			right: 0;
+			background: var(--panel);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 8px;
+			box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+			z-index: 9999;
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			max-height: 300px;
+		}
+		.custom-select-dropdown.hidden {
+			display: none !important;
+		}
+		.custom-select-search-wrapper {
+			display: flex;
+			align-items: center;
+			padding: 8px 12px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+			background: rgba(0, 0, 0, 0.2);
+			gap: 8px;
+		}
+		.custom-select-search-wrapper .search-icon {
+			color: var(--muted);
+			font-size: 18px;
+		}
+		.custom-select-search {
+			flex: 1;
+			background: transparent;
+			border: none;
+			outline: none;
+			color: #dfeef2;
+			font-size: 13px;
+			padding: 2px 0;
+		}
+		.custom-select-options {
+			overflow-y: auto;
+			flex: 1;
+			max-height: 220px;
+		}
+		.custom-select-option {
+			padding: 10px 12px;
+			cursor: pointer;
+			font-size: 13px;
+			color: #dfeef2;
+			transition: all 0.15s ease;
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+		}
+		.custom-select-option:last-child {
+			border-bottom: none;
+		}
+		.custom-select-option:hover {
+			background: rgba(163, 230, 53, 0.08);
+			color: #fff;
+		}
+		.custom-select-option.selected {
+			background: rgba(163, 230, 53, 0.15);
+			color: var(--accent);
+			font-weight: 600;
+		}
+		.custom-select-option-name {
+			font-weight: 500;
+		}
+		.custom-select-option-meta {
+			font-size: 11px;
+			color: var(--muted);
+		}
+		.custom-select-option.selected .custom-select-option-meta {
+			color: rgba(163, 230, 53, 0.7);
+		}
+		.custom-select-no-results {
+			padding: 16px;
+			text-align: center;
+			color: var(--muted);
+			font-size: 13px;
+		}
+
 		body {
 			margin: 0;
 			font-family: 'Inter', Arial, Helvetica, sans-serif;
@@ -2070,7 +2199,14 @@
 			</section>
 			<section id="clients-section" class="card" style="display:none;margin-top:12px">
 				<h3>Clientes</h3>
-				<button class="btn" id="btn-new-client-inline" style="margin-bottom:8px">+ Nuevo cliente</button>
+				<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px">
+					<button class="btn" id="btn-new-client-inline" style="margin:0">+ Nuevo cliente</button>
+					<div class="small filters" style="margin:0; display:flex; align-items:center; gap:8px">
+						Buscar:
+						<input id="client-filter-input" placeholder="Buscar por nombre, cédula, teléfono..."
+							style="padding:6px 12px;border-radius:6px;background:#052026;border:1px solid rgba(255,255,255,.04);color:#dfeef2;width:250px">
+					</div>
+				</div>
 				<!-- NUEVO: envoltorio con scroll horizontal -->
 				<div class="table-scroll">
 					<table id="clients-table">
@@ -2165,9 +2301,9 @@
 				<div
 					style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #e2e8f0;padding-bottom:10px">
 					<button class="btn" id="subtab-inventory" onclick="switchInventorySubtab('inv')"
-						style="background:#7af0a5;color:#04121a">📦 Inventario</button>
+						style="background:#7af0a5;color:#04121a"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">inventory_2</span> Inventario</button>
 					<button class="btn" id="subtab-catalog" onclick="switchInventorySubtab('cat')"
-						style="background:#64707a">🛍️ Catálogo</button>
+						style="background:#64707a"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">storefront</span> Catálogo</button>
 				</div>
 				<!-- Inventario subtab -->
 				<div id="inv-subtab-content">
@@ -2479,11 +2615,7 @@
 			<h3 id="modal-order-title">Nueva orden</h3>
 			<form id="form-order">
 				<div class="form-row">
-					<select name="clientId" required>
-						<option value="">-- Seleccionar cliente --</option>
-					</select>
-					<button type="button" class="btn" id="btn-order-new-client" style="background:#64707a">Nuevo
-						cliente</button>
+					<div id="order-client-select-wrapper" style="flex:1"></div>
 				</div>
 
 				<!-- nuevo: selector de estado -->
@@ -2530,11 +2662,11 @@
 					<div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
 						<button type="button" id="btn-take-photo" class="btn"
 							style="background:#3bb4ff;color:#05121a;flex:1;min-width:150px">
-							📷 Tomar Foto
+							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">photo_camera</span> Tomar Foto
 						</button>
 						<button type="button" id="btn-choose-gallery" class="btn"
 							style="background:#9c27b0;color:#fff;flex:1;min-width:150px">
-							🖼️ Galería
+							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">image</span> Galería
 						</button>
 					</div>
 					<input type="file" id="order-images-camera" accept="image/*" capture="environment" multiple
@@ -2587,10 +2719,8 @@
 			</div>
 			<div class="history-list" id="equipment-history" style="max-height:400px;overflow-y:auto"></div>
 			<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
-				<button type="button" class="btn" id="btn-eq-print-qr" style="background:#e040fb;color:#fff">📱 Imprimir
-					QR</button>
-				<button type="button" class="btn" id="btn-eq-copy-link" style="background:#9c27b0;color:#fff">🔗 Copiar
-					Link</button>
+				<button type="button" class="btn" id="btn-eq-print-qr" style="background:#e040fb;color:#fff"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">print</span> Imprimir QR</button>
+				<button type="button" class="btn" id="btn-eq-copy-link" style="background:#9c27b0;color:#fff"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">link</span> Copiar Link</button>
 				<button type="button" class="btn" id="btn-close-equipment" style="background:#64707a">Cerrar</button>
 			</div>
 		</div>
@@ -2707,7 +2837,7 @@
 			<div class="form-row" style="align-items:center;gap:16px;margin-bottom:12px">
 				<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#e2e8f0;font-size:13px">
 					<input type="checkbox" id="cat-item-featured"
-						style="width:16px;height:16px;accent-color:var(--accent)"> ⭐ Destacado
+						style="width:16px;height:16px;accent-color:var(--accent)"> <span class="material-icons-round" style="font-size:15px;color:var(--accent);vertical-align:middle;margin-right:2px">star</span> Destacado
 				</label>
 				<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#e2e8f0;font-size:13px">
 					<input type="checkbox" id="cat-item-available" checked
@@ -2717,7 +2847,7 @@
 			<div style="display:flex;gap:8px;justify-content:flex-end">
 				<button class="btn" onclick="closeModal('#modal-catalog-item')"
 					style="background:#64707a">Cancelar</button>
-				<button class="btn" onclick="saveCatalogItem()">💾 Guardar</button>
+				<button class="btn" onclick="saveCatalogItem()"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">save</span> Guardar</button>
 			</div>
 		</div>
 	</div>
@@ -2728,9 +2858,7 @@
 			<h3 id="modal-invoice-title">Nueva factura</h3>
 			<form id="form-invoice">
 				<div class="form-row">
-					<select name="clientId" required>
-						<option value="">-- Seleccionar cliente --</option>
-					</select>
+					<div id="invoice-client-select-wrapper" style="flex:2"></div>
 					<input name="invoiceNumber" placeholder="Número de factura (auto)" readonly
 						style="background:#031419">
 				</div>
@@ -2747,7 +2875,7 @@
 					<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;user-select:none">
 						<input type="checkbox" name="registerInFinance" id="registerInFinance" checked
 							style="width:auto;cursor:pointer;transform:scale(1.2)">
-						<span style="font-size:13px">💰 Registrar como ingreso en Finanzas <span class="small">(solo si
+						<span style="font-size:13px"><span class="material-icons-round" style="font-size:16px;color:#7af0a5;vertical-align:middle;margin-right:4px">payments</span> Registrar como ingreso en Finanzas <span class="small">(solo si
 								está pagada)</span></span>
 					</label>
 				</div>
@@ -2919,7 +3047,7 @@
 		}
 
 		// Configuración de API - solo Cloudflare
-		const API_BASE = "https://casinos-bunny-edited-officers.trycloudflare.com/api";
+		const API_BASE = "https://vendor-machinery-pet-interested.trycloudflare.com/api";
 		const API_URL = API_BASE;
 		let API_TIMEOUT_MS = 10000; // 10 segundos timeout por defecto
 		let API_SAVE_TIMEOUT_MS = 30000; // 30 segundos para guardar (imágenes)
@@ -3400,9 +3528,21 @@
 			}
 
 			$('#btn-add-order').addEventListener('click', () => openOrderModal());
-			$('#btn-order-new-client').addEventListener('click', () => openClientModal());
+			const btnOrderNewClient = $('#btn-order-new-client');
+			if (btnOrderNewClient) {
+				btnOrderNewClient.addEventListener('click', () => openClientModal());
+			}
 			$('#btn-new-client-inline').addEventListener('click', () => openClientModal());
 			$('#btn-add-client').addEventListener('click', () => openClientModal());
+
+			const clientFilterInput = $('#client-filter-input');
+			if (clientFilterInput) {
+				clientFilterInput.addEventListener('input', async () => await renderClients());
+			}
+
+			// Inicializar selectores de clientes premium con buscador
+			initCustomClientSelect('order-client-select-wrapper', 'clientId', () => openClientModal());
+			initCustomClientSelect('invoice-client-select-wrapper', 'clientId');
 
 			$('#btn-close-order').addEventListener('click', () => closeModal('#modal-order'));
 			$('#btn-close-client').addEventListener('click', () => closeModal('#modal-client'));
@@ -3716,13 +3856,13 @@
 							<option value="espera_entrega"${statusKey === 'espera_entrega' ? ' selected' : ''}>En espera de entrega</option>
 							<option value="entregado"${statusKey === 'entregado' ? ' selected' : ''}>Entregado</option>
 						</select>
-						<button class="btn btn-toggle-payment" data-id="${o.id}" title="Cambiar estado de pago">${isPaid ? '💰 Pagado' : '💳 Marcar pagado'}</button>
-						<button class="btn btn-copy-link" data-id="${o.id}" style="background:#9c27b0;color:#fff" title="Copiar enlace público">🔗 Link</button>
+						<button class="btn btn-toggle-payment" data-id="${o.id}" title="Cambiar estado de pago">${isPaid ? '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payments</span> Pagado' : '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payment</span> Marcar pagado'}</button>
+						<button class="btn btn-copy-link" data-id="${o.id}" style="background:#9c27b0;color:#fff" title="Copiar enlace público"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">link</span> Link</button>
 						<button class="btn btn-edit" data-id="${o.id}">Editar</button>
 						<button class="btn btn-delete" data-id="${o.id}">Eliminar</button>
 						<button class="btn" style="background:#071a2a;color:#7af0a5" data-id="${o.id}" class="btn-pdf">PDF</button>
 						<button class="btn btn-whatsapp" data-id="${o.id}" style="background:#25D366;color:#06121a">WhatsApp</button>
-						${o.serial ? `<button class="btn btn-print-qr" data-serial="${escapeHtml(o.serial)}" data-brand="${escapeHtml(o.brand || '')}" data-model="${escapeHtml(o.model || '')}" style="background:#e040fb;color:#fff" title="Imprimir QR del equipo">📱 QR</button>` : ''}
+						${o.serial ? `<button class="btn btn-print-qr" data-serial="${escapeHtml(o.serial)}" data-brand="${escapeHtml(o.brand || '')}" data-model="${escapeHtml(o.model || '')}" style="background:#e040fb;color:#fff" title="Imprimir QR del equipo"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">qr_code_2</span> QR</button>` : ''}
 					</td>
 				`;
 				tbody.appendChild(tr);
@@ -3782,34 +3922,34 @@
 						</div>
 						<div class="order-card-body">
 							<div class="order-card-row">
-								<div class="order-card-label">👤 Cliente:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">person</span> Cliente:</div>
 								<div class="order-card-value">${escapeHtml(client.name)}</div>
 							</div>
 							<div class="order-card-row">
-								<div class="order-card-label">💻 Equipo:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">smartphone</span> Equipo:</div>
 								<div class="order-card-value">${escapeHtml(o.brand || '--')} ${escapeHtml(o.model || '')}</div>
 							</div>
 							<div class="order-card-row">
-								<div class="order-card-label">🔢 Serie:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">tag</span> Serie:</div>
 								<div class="order-card-value">${escapeHtml(o.serial || '--')}</div>
 							</div>
 							${o.accessories ? `
 							<div class="order-card-row">
-								<div class="order-card-label">📦 Acces.:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">inventory_2</span> Acces.:</div>
 								<div class="order-card-value">${escapeHtml(o.accessories)}</div>
 							</div>
 							` : ''}
 							<div class="order-card-row">
-								<div class="order-card-label">⚠️ Falla:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">report_problem</span> Falla:</div>
 								<div class="order-card-value">${escapeHtml(o.failure || 'No especificada')}</div>
 							</div>
 							<div class="order-card-row">
-								<div class="order-card-label">💰 Precio:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payments</span> Precio:</div>
 								<div class="order-card-value">${priceDisplay}</div>
 							</div>
 							${o.technician ? `
 							<div class="order-card-row">
-								<div class="order-card-label">🔧 Técnico:</div>
+								<div class="order-card-label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">engineering</span> Técnico:</div>
 								<div class="order-card-value">${escapeHtml(o.technician)}</div>
 							</div>
 							` : ''}
@@ -3831,13 +3971,13 @@
 								<option value="espera_entrega"${statusKey === 'espera_entrega' ? ' selected' : ''}>Espera entrega</option>
 								<option value="entregado"${statusKey === 'entregado' ? ' selected' : ''}>Entregado</option>
 							</select>
-							<button class="btn btn-toggle-payment-card" data-id="${o.id}" style="background:#ffa726;color:#07121a">${isPaid ? '💰 Pagado' : '💳 Pagar'}</button>
-							<button class="btn btn-edit-card" data-id="${o.id}" style="background:#3bb4ff;color:#05121a">✏️ Editar</button>
-							<button class="btn btn-pdf-card" data-id="${o.id}" style="background:#071a2a;color:#7af0a5">📄 PDF</button>
-							<button class="btn btn-whatsapp-card" data-id="${o.id}" style="background:#25D366;color:#06121a">📱 WhatsApp</button>
-							<button class="btn btn-copy-link-card" data-id="${o.id}" style="background:#9c27b0;color:#fff">🔗 Link</button>
-							${o.serial ? `<button class="btn btn-print-qr-card" data-serial="${escapeHtml(o.serial)}" data-brand="${escapeHtml(o.brand || '')}" data-model="${escapeHtml(o.model || '')}" style="background:#e040fb;color:#fff">📱 QR Equipo</button>` : ''}
-							<button class="btn btn-delete-card" data-id="${o.id}" style="background:#ff5b6b;color:#fff">🗑️ Eliminar</button>
+							<button class="btn btn-toggle-payment-card" data-id="${o.id}" style="background:#ffa726;color:#07121a">${isPaid ? '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payments</span> Pagado' : '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payment</span> Pagar'}</button>
+							<button class="btn btn-edit-card" data-id="${o.id}" style="background:#3bb4ff;color:#05121a"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">edit</span> Editar</button>
+							<button class="btn btn-pdf-card" data-id="${o.id}" style="background:#071a2a;color:#7af0a5"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">picture_as_pdf</span> PDF</button>
+							<button class="btn btn-whatsapp-card" data-id="${o.id}" style="background:#25D366;color:#06121a"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">chat</span> WhatsApp</button>
+							<button class="btn btn-copy-link-card" data-id="${o.id}" style="background:#9c27b0;color:#fff"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">link</span> Link</button>
+							${o.serial ? `<button class="btn btn-print-qr-card" data-serial="${escapeHtml(o.serial)}" data-brand="${escapeHtml(o.brand || '')}" data-model="${escapeHtml(o.model || '')}" style="background:#e040fb;color:#fff"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">qr_code_2</span> QR Equipo</button>` : ''}
+							<button class="btn btn-delete-card" data-id="${o.id}" style="background:#ff5b6b;color:#fff"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">delete</span> Eliminar</button>
 						</div>
 					`;
 					cardsContainer.appendChild(card);
@@ -4140,7 +4280,14 @@
 			$('#modal-order-title').textContent = id ? 'Editar orden' : 'Nueva orden';
 			const form = $('#form-order');
 			form.reset();
-			await populateClientSelect();
+			
+			const orderWrapper = document.getElementById('order-client-select-wrapper');
+			if (orderWrapper && orderWrapper.setValue) {
+				await orderWrapper.setValue('');
+			} else {
+				await populateClientSelect();
+			}
+
 			// limpiar imágenes previas
 			currentOrderImages = [];
 			$('#image-preview-container').innerHTML = '';
@@ -4152,7 +4299,11 @@
 			if (id) {
 				const item = (await loadOrders()).find(x => x.id == id);
 				if (item) {
-					form.clientId.value = item.clientId || '';
+					if (orderWrapper && orderWrapper.setValue) {
+						await orderWrapper.setValue(item.clientId || '');
+					} else {
+						form.clientId.value = item.clientId || '';
+					}
 					form.brand.value = item.brand || '';
 					form.serial.value = item.serial || '';
 					form.model.value = item.model || '';
@@ -4171,7 +4322,8 @@
 				}
 			}
 			modal.classList.add('show');
-			form.querySelector('select[name="clientId"]').focus();
+			const focusSel = form.querySelector('select[name="clientId"]');
+			if (focusSel && focusSel.style.display !== 'none') focusSel.focus();
 		}
 		function closeModal(sel) { document.querySelector(sel).classList.remove('show'); editingOrderId = null; editingClientId = null; }
 
@@ -4388,8 +4540,26 @@
 		async function renderClients() {
 			const tbody = $('#clients-table tbody');
 			const items = await loadClients();
+			
+			const filterInput = $('#client-filter-input');
+			const filterText = filterInput ? filterInput.value.toLowerCase().trim() : '';
+
+			const filteredItems = items.filter(c => {
+				if (!filterText) return true;
+				const name = (c.name || '').toLowerCase();
+				const cedula = (c.cedula || '').toLowerCase();
+				const phone = (c.phone || '').toLowerCase();
+				const email = (c.email || '').toLowerCase();
+				const id = String(c.id || '').toLowerCase();
+				return name.includes(filterText) ||
+					cedula.includes(filterText) ||
+					phone.includes(filterText) ||
+					email.includes(filterText) ||
+					id.includes(filterText);
+			});
+
 			tbody.innerHTML = '';
-			items.forEach(c => {
+			filteredItems.forEach(c => {
 				const tr = document.createElement('tr');
 				tr.innerHTML = `
 					<td>${c.id}</td>
@@ -4411,22 +4581,22 @@
 			const cardsContainer = $('#clients-cards-container');
 			if (cardsContainer) {
 				cardsContainer.innerHTML = '';
-				items.forEach(c => {
+				filteredItems.forEach(c => {
 					const card = document.createElement('div');
 					card.className = 'data-card';
 					card.innerHTML = `
 						<div class="data-card-header">
-							<h4>👤 ${escapeHtml(c.name)}</h4>
+							<h4><span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">person</span> ${escapeHtml(c.name)}</h4>
 							<span class="badge" style="background:#3bb4ff">ID: ${c.id}</span>
 						</div>
 						<div class="data-card-body">
-							${c.cedula ? `<div class="data-card-row"><span class="label">🪪 Cédula:</span><span class="value">${escapeHtml(c.cedula)}</span></div>` : ''}
-							${c.phone ? `<div class="data-card-row"><span class="label">📞 Teléfono:</span><span class="value">${escapeHtml(c.phone)}</span></div>` : ''}
-							${c.email ? `<div class="data-card-row"><span class="label">📧 Email:</span><span class="value">${escapeHtml(c.email)}</span></div>` : ''}
+							${c.cedula ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">badge</span> Cédula:</span><span class="value">${escapeHtml(c.cedula)}</span></div>` : ''}
+							${c.phone ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">phone</span> Teléfono:</span><span class="value">${escapeHtml(c.phone)}</span></div>` : ''}
+							${c.email ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">email</span> Email:</span><span class="value">${escapeHtml(c.email)}</span></div>` : ''}
 						</div>
 						<div class="data-card-actions">
-							<button class="btn btn-edit card-btn-edit" data-id="${c.id}">✏️ Editar</button>
-							<button class="btn btn-delete card-btn-delete" data-id="${c.id}">🗑️ Eliminar</button>
+							<button class="btn btn-edit card-btn-edit" data-id="${c.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">edit</span> Editar</button>
+							<button class="btn btn-delete card-btn-delete" data-id="${c.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">delete</span> Eliminar</button>
 						</div>
 					`;
 					cardsContainer.appendChild(card);
@@ -4489,17 +4659,28 @@
 			}
 			await saveClients(list);
 
-			// repoblar select de clientes en el formulario de orden
-			await populateClientSelect();
+			// repoblar select de clientes en los formularios de orden y factura
+			const orderWrapper = document.getElementById('order-client-select-wrapper');
+			const invoiceWrapper = document.getElementById('invoice-client-select-wrapper');
 
-			// si creamos un cliente nuevo, seleccionarlo automáticamente en el formulario de orden (si existe)
-			if (newClientId) {
-				const orderSel = document.querySelector('#form-order select[name="clientId"]');
-				if (orderSel) {
-					orderSel.value = newClientId;
-					const modalOrder = document.querySelector('#modal-order');
-					if (modalOrder && modalOrder.classList.contains('show')) orderSel.focus();
+			if (orderWrapper && orderWrapper.setValue) {
+				if (newClientId) {
+					await orderWrapper.setValue(newClientId);
+				} else {
+					await orderWrapper.refresh();
 				}
+			} else {
+				await populateClientSelect();
+				if (newClientId) {
+					const orderSel = document.querySelector('#form-order select[name="clientId"]');
+					if (orderSel) {
+						orderSel.value = newClientId;
+					}
+				}
+			}
+
+			if (invoiceWrapper && invoiceWrapper.refresh) {
+				await invoiceWrapper.refresh();
 			}
 
 			closeModal('#modal-client');
@@ -4510,23 +4691,259 @@
 			const list = (await loadClients()).filter(x => x.id != id);
 			await saveClients(list);
 			await renderClients();
-			// repoblar select de clientes
-			await populateClientSelect();
+
+			const orderWrapper = document.getElementById('order-client-select-wrapper');
+			const invoiceWrapper = document.getElementById('invoice-client-select-wrapper');
+			if (orderWrapper && orderWrapper.refresh) {
+				await orderWrapper.refresh();
+			} else {
+				await populateClientSelect();
+			}
+			if (invoiceWrapper && invoiceWrapper.refresh) {
+				await invoiceWrapper.refresh();
+			}
 		}
 
 		// Helpers para clientes
-		async function populateClientSelect() {
+		async function populateClientSelect(filterText = '') {
 			const sel = document.querySelector('#form-order select[name="clientId"]');
-			const clients = await loadClients();
 			if (!sel) return;
+			const selectedValue = sel.value;
+			const clients = await loadClients();
+			
+			const query = filterText.toLowerCase().trim();
+			const filteredClients = clients.filter(c => {
+				if (!query) return true;
+				const name = (c.name || '').toLowerCase();
+				const cedula = (c.cedula || '').toLowerCase();
+				const phone = (c.phone || '').toLowerCase();
+				const email = (c.email || '').toLowerCase();
+				const id = String(c.id || '').toLowerCase();
+				return name.includes(query) ||
+					cedula.includes(query) ||
+					phone.includes(query) ||
+					email.includes(query) ||
+					id.includes(query);
+			});
+
 			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
-			clients.forEach(c => {
+			
+			// Si hay un valor seleccionado y no está en la lista filtrada, mantenerlo
+			if (selectedValue && !filteredClients.some(c => c.id == selectedValue)) {
+				const currentClient = clients.find(c => c.id == selectedValue);
+				if (currentClient) {
+					filteredClients.unshift(currentClient);
+				}
+			}
+
+			filteredClients.forEach(c => {
 				const opt = document.createElement('option');
-				opt.value = c.id; opt.textContent = c.name;
+				opt.value = c.id;
+				opt.textContent = `${c.name}${c.cedula ? ` (${c.cedula})` : ''}${c.phone ? ` - ${c.phone}` : ''}`;
 				sel.appendChild(opt);
 			});
+
+			sel.value = selectedValue;
 		}
+		async function populateInvoiceClientSelect(filterText = '') {
+			const sel = document.querySelector('#form-invoice select[name="clientId"]');
+			if (!sel) return;
+			const selectedValue = sel.value;
+			const clients = await loadClients();
+			
+			const query = filterText.toLowerCase().trim();
+			const filteredClients = clients.filter(c => {
+				if (!query) return true;
+				const name = (c.name || '').toLowerCase();
+				const cedula = (c.cedula || '').toLowerCase();
+				const phone = (c.phone || '').toLowerCase();
+				const email = (c.email || '').toLowerCase();
+				const id = String(c.id || '').toLowerCase();
+				return name.includes(query) ||
+					cedula.includes(query) ||
+					phone.includes(query) ||
+					email.includes(query) ||
+					id.includes(query);
+			});
+
+			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
+			
+			// Si hay un valor seleccionado y no está en la lista filtrada, mantenerlo
+			if (selectedValue && !filteredClients.some(c => c.id == selectedValue)) {
+				const currentClient = clients.find(c => c.id == selectedValue);
+				if (currentClient) {
+					filteredClients.unshift(currentClient);
+				}
+			}
+
+			filteredClients.forEach(c => {
+				const opt = document.createElement('option');
+				opt.value = c.id;
+				opt.textContent = `${c.name}${c.cedula ? ` (${c.cedula})` : ''}${c.phone ? ` - ${c.phone}` : ''}`;
+				sel.appendChild(opt);
+			});
+
+			sel.value = selectedValue;
+		}
+
 		async function findClientById(id) { const clients = await loadClients(); return clients.find(c => c.id == id); }
+
+		// NUEVO: Inicializador del selector de clientes premium con buscador
+		function initCustomClientSelect(containerId, selectName, onNewClientClick) {
+			const container = document.getElementById(containerId);
+			if (!container) return;
+
+			container.className = 'custom-select-container';
+			container.innerHTML = `
+				<div class="custom-select-trigger">
+					<span class="custom-select-text">-- Seleccionar cliente --</span>
+					<span class="material-icons-round dropdown-icon">expand_more</span>
+				</div>
+				<div class="custom-select-dropdown hidden">
+					<div class="custom-select-search-wrapper">
+						<span class="material-icons-round search-icon">search</span>
+						<input type="text" class="custom-select-search" placeholder="Escribe para buscar cliente...">
+					</div>
+					<div class="custom-select-options"></div>
+					${onNewClientClick ? `
+					<div style="padding:8px; border-top:1px solid rgba(255,255,255,0.04); text-align:center; background: rgba(0,0,0,0.1)">
+						<button type="button" class="btn btn-new-client-shortcut" style="padding: 4px 12px; font-size:11px; background:#64707a; margin:0; width:100%; min-height:auto">+ Crear Nuevo Cliente</button>
+					</div>
+					` : ''}
+				</div>
+				<select name="${selectName}" required style="opacity: 0; position: absolute; width: 0; height: 0; pointer-events: none; border: none; padding: 0; margin: 0;">
+					<option value="">-- Seleccionar cliente --</option>
+				</select>
+			`;
+
+			const trigger = container.querySelector('.custom-select-trigger');
+			const dropdown = container.querySelector('.custom-select-dropdown');
+			const searchInput = container.querySelector('.custom-select-search');
+			const optionsContainer = container.querySelector('.custom-select-options');
+			const hiddenSelect = container.querySelector(`select[name="${selectName}"]`);
+
+			if (onNewClientClick) {
+				const newClientBtn = container.querySelector('.btn-new-client-shortcut');
+				if (newClientBtn) {
+					newClientBtn.onclick = (e) => {
+						e.stopPropagation();
+						dropdown.classList.add('hidden');
+						trigger.classList.remove('active');
+						onNewClientClick();
+					};
+				}
+			}
+
+			// Mostrar/Ocultar dropdown
+			trigger.onclick = (e) => {
+				e.stopPropagation();
+				const isHidden = dropdown.classList.contains('hidden');
+				document.querySelectorAll('.custom-select-dropdown').forEach(d => d.classList.add('hidden'));
+				document.querySelectorAll('.custom-select-trigger').forEach(t => t.classList.remove('active'));
+
+				if (isHidden) {
+					dropdown.classList.remove('hidden');
+					trigger.classList.add('active');
+					searchInput.value = '';
+					searchInput.focus();
+					renderOptions();
+				}
+			};
+
+			// Filtrar al escribir
+			searchInput.oninput = () => {
+				renderOptions(searchInput.value);
+			};
+
+			searchInput.onclick = (e) => e.stopPropagation();
+
+			// Cerrar al hacer clic afuera
+			document.addEventListener('click', (e) => {
+				if (!container.contains(e.target)) {
+					dropdown.classList.add('hidden');
+					trigger.classList.remove('active');
+				}
+			});
+
+			// Renderizar opciones
+			async function renderOptions(filterText = '') {
+				const clients = await loadClients();
+				const query = filterText.toLowerCase().trim();
+				const selectedValue = hiddenSelect.value;
+
+				const filtered = clients.filter(c => {
+					if (!query) return true;
+					const name = (c.name || '').toLowerCase();
+					const cedula = (c.cedula || '').toLowerCase();
+					const phone = (c.phone || '').toLowerCase();
+					const email = (c.email || '').toLowerCase();
+					const id = String(c.id || '').toLowerCase();
+					return name.includes(query) ||
+						cedula.includes(query) ||
+						phone.includes(query) ||
+						email.includes(query) ||
+						id.includes(query);
+				});
+
+				optionsContainer.innerHTML = '';
+
+				if (filtered.length === 0) {
+					optionsContainer.innerHTML = '<div class="custom-select-no-results">No se encontraron clientes</div>';
+					return;
+				}
+
+				// Opción por defecto
+				const defaultOpt = document.createElement('div');
+				defaultOpt.className = `custom-select-option ${selectedValue === '' ? 'selected' : ''}`;
+				defaultOpt.innerHTML = `<div class="custom-select-option-name">-- Seleccionar cliente --</div>`;
+				defaultOpt.onclick = () => {
+					selectValue('', '-- Seleccionar cliente --');
+				};
+				optionsContainer.appendChild(defaultOpt);
+
+				filtered.forEach(c => {
+					const opt = document.createElement('div');
+					const isSelected = selectedValue == c.id;
+					opt.className = `custom-select-option ${isSelected ? 'selected' : ''}`;
+					opt.innerHTML = `
+						<div class="custom-select-option-name">${escapeHtml(c.name)}</div>
+						<div class="custom-select-option-meta">
+							${c.cedula ? `<span class="material-icons-round" style="font-size:12px;vertical-align:middle;margin-right:2px">badge</span> Cédula: ${escapeHtml(c.cedula)}` : ''}
+							${c.phone ? ` <span class="material-icons-round" style="font-size:12px;vertical-align:middle;margin-right:2px">phone</span> Tel: ${escapeHtml(c.phone)}` : ''}
+						</div>
+					`;
+					opt.onclick = () => {
+						selectValue(c.id, c.name);
+					};
+					optionsContainer.appendChild(opt);
+				});
+			}
+
+			function selectValue(val, text) {
+				hiddenSelect.value = val;
+				hiddenSelect.dispatchEvent(new Event('change', { bubbles: true }));
+				container.querySelector('.custom-select-text').textContent = text;
+				dropdown.classList.add('hidden');
+				trigger.classList.remove('active');
+			}
+
+			container.setValue = async (val) => {
+				hiddenSelect.value = val;
+				if (val) {
+					const clients = await loadClients();
+					const client = clients.find(c => c.id == val);
+					container.querySelector('.custom-select-text').textContent = client ? client.name : '-- Seleccionar cliente --';
+				} else {
+					container.querySelector('.custom-select-text').textContent = '-- Seleccionar cliente --';
+				}
+			};
+
+			container.refresh = async () => {
+				await renderOptions(searchInput.value);
+			};
+
+			return container;
+		}
 
 		// Equipments: hoja de vida por serial (asíncrono)
 		async function upsertEquipmentFromOrder(order) {
@@ -5042,9 +5459,9 @@
 								<strong style="color:var(--accent);font-size:13px">${new Date(h.date).toLocaleString()}</strong>
 								<span class="status-badge status-${statusKey}" style="font-size:11px;padding:3px 8px">${statusLabel}</span>
 							</div>
-							<div style="font-size:13px;margin-bottom:4px">⚠️ ${escapeHtml(h.failure || 'Sin falla reportada')}</div>
-							<div class="small" style="font-size:12px">👤 ${escapeHtml(client.name)} · 🔧 ${escapeHtml(h.technician || 'Sin técnico')}</div>
-							${h.notes ? `<div class="small" style="font-size:12px;margin-top:4px;color:#7af0a5">📝 ${escapeHtml(h.notes)}</div>` : ''}
+							<div style="font-size:13px;margin-bottom:4px"><span class="material-icons-round" style="font-size:14px;color:#ffcc33;vertical-align:middle;margin-right:4px">report_problem</span> ${escapeHtml(h.failure || 'Sin falla reportada')}</div>
+							<div class="small" style="font-size:12px"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">person</span> ${escapeHtml(client.name)} · <span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">engineering</span> ${escapeHtml(h.technician || 'Sin técnico')}</div>
+							${h.notes ? `<div class="small" style="font-size:12px;margin-top:4px;color:#7af0a5"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">description</span> ${escapeHtml(h.notes)}</div>` : ''}
 						`;
 						container.appendChild(div);
 					});
@@ -5170,7 +5587,7 @@
 				filtered.forEach(t => {
 					const isIncome = t.type === 'income';
 					const typeColor = isIncome ? '#7af0a5' : '#ff6b6b';
-					const typeIcon = isIncome ? '💵' : '💸';
+					const typeIcon = isIncome ? '<span class="material-icons-round" style="color:#7af0a5;vertical-align:middle;margin-right:4px">trending_up</span>' : '<span class="material-icons-round" style="color:#ff6b6b;vertical-align:middle;margin-right:4px">trending_down</span>';
 					const typeText = isIncome ? 'Ingreso' : 'Gasto';
 					const card = document.createElement('div');
 					card.className = 'data-card';
@@ -5180,12 +5597,12 @@
 							<span class="badge" style="background:${typeColor};color:#04121a">${typeText}</span>
 						</div>
 						<div class="data-card-body">
-							<div class="data-card-row"><span class="label">🏷️ Categoría:</span><span class="value">${escapeHtml(t.category || '')}</span></div>
-							<div class="data-card-row"><span class="label">📅 Fecha:</span><span class="value">${t.date || ''}</span></div>
-							${t.notes ? `<div class="data-card-row"><span class="label">📝 Notas:</span><span class="value">${escapeHtml(t.notes)}</span></div>` : ''}
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">sell</span> Categoría:</span><span class="value">${escapeHtml(t.category || '')}</span></div>
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">calendar_today</span> Fecha:</span><span class="value">${t.date || ''}</span></div>
+							${t.notes ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">description</span> Notas:</span><span class="value">${escapeHtml(t.notes)}</span></div>` : ''}
 						</div>
 						<div class="data-card-actions">
-							${t.isSupplierAbono ? '<span class="small" style="color:var(--muted)">Usa la sección de Proveedores para gestionar este pago</span>' : `<button class="btn btn-delete card-btn-delete" data-id="${t.id}">🗑️ Eliminar</button>`}
+							${t.isSupplierAbono ? '<span class="small" style="color:var(--muted)">Usa la sección de Proveedores para gestionar este pago</span>' : `<button class="btn btn-delete card-btn-delete" data-id="${t.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">delete</span> Eliminar</button>`}
 						</div>
 					`;
 					cardsContainer.appendChild(card);
@@ -5295,22 +5712,22 @@
 					card.className = 'data-card';
 					card.innerHTML = `
 						<div class="data-card-header">
-							<h4>📦 ${escapeHtml(item.name || '')}</h4>
+							<h4><span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">inventory_2</span> ${escapeHtml(item.name || '')}</h4>
 							<span class="badge" style="background:#64707a">${escapeHtml(item.category || '')}</span>
 						</div>
 						<div class="data-card-body">
-							<div class="data-card-row"><span class="label">📊 Stock:</span><span class="value" style="color:${stockColor};font-weight:bold">${stock} unidades</span></div>
-							${unitCost ? `<div class="data-card-row"><span class="label">💵 Costo:</span><span class="value">${formatCurrency(unitCost)}</span></div>` : ''}
-							${unitPrice ? `<div class="data-card-row"><span class="label">💰 Precio:</span><span class="value">${formatCurrency(unitPrice)}</span></div>` : ''}
-							${item.supplier ? `<div class="data-card-row"><span class="label">🏭 Proveedor:</span><span class="value">${escapeHtml(item.supplier)}</span></div>` : ''}
-							${item.updatedAt ? `<div class="data-card-row"><span class="label">🕐 Actualizado:</span><span class="value">${new Date(item.updatedAt).toLocaleString()}</span></div>` : ''}
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">bar_chart</span> Stock:</span><span class="value" style="color:${stockColor};font-weight:bold">${stock} unidades</span></div>
+							${unitCost ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payments</span> Costo:</span><span class="value">${formatCurrency(unitCost)}</span></div>` : ''}
+							${unitPrice ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">monetization_on</span> Precio:</span><span class="value">${formatCurrency(unitPrice)}</span></div>` : ''}
+							${item.supplier ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">domain</span> Proveedor:</span><span class="value">${escapeHtml(item.supplier)}</span></div>` : ''}
+							${item.updatedAt ? `<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">update</span> Actualizado:</span><span class="value">${new Date(item.updatedAt).toLocaleString()}</span></div>` : ''}
 						</div>
 						<div class="data-card-actions">
-							<button class="btn card-btn-in" data-id="${item.id}" style="background:#7af0a5;color:#04121a">⬆️ Entrada</button>
-							<button class="btn card-btn-out" data-id="${item.id}" style="background:#ffcc33;color:#04121a">⬇️ Salida</button>
-							<button class="btn btn-edit card-btn-edit" data-id="${item.id}">✏️ Editar</button>
-							<button class="btn btn-delete card-btn-del" data-id="${item.id}">🗑️ Eliminar</button>
-							<button class="btn card-btn-hist" data-id="${item.id}" style="background:#3bb4ff;color:#04121a">📜 Historial</button>
+							<button class="btn card-btn-in" data-id="${item.id}" style="background:#7af0a5;color:#04121a"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">add_circle_outline</span> Entrada</button>
+							<button class="btn card-btn-out" data-id="${item.id}" style="background:#ffcc33;color:#04121a"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">remove_circle_outline</span> Salida</button>
+							<button class="btn btn-edit card-btn-edit" data-id="${item.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">edit</span> Editar</button>
+							<button class="btn btn-delete card-btn-del" data-id="${item.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">delete</span> Eliminar</button>
+							<button class="btn card-btn-hist" data-id="${item.id}" style="background:#3bb4ff;color:#04121a"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">history</span> Historial</button>
 						</div>
 					`;
 					cardsContainer.appendChild(card);
@@ -5646,8 +6063,8 @@
 			if (!serial) return alert('No hay número de serie para este equipo');
 
 			const link = getEquipmentLink(serial);
-			const qrSize = 120;
-			const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(link)}`;
+			const qrSize = 250; // Mayor resolución para impresión nítida
+			const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&margin=1&data=${encodeURIComponent(link)}`;
 			const logoUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'icon-192.png';
 
 			const printWindow = window.open('', '_blank', 'width=816,height=1056');
@@ -5656,16 +6073,18 @@
 			doc.write('<!DOCTYPE html><html><head>');
 			doc.write('<title>QR - ' + serial + '<' + '/title>');
 			doc.write('<style>');
-			doc.write('@page { size: letter; margin: 0; }');
-			doc.write('body { margin: 0; padding: 5mm; font-family: Arial, Helvetica, sans-serif; }');
-			doc.write('.sticker { width: 60mm; height: 30mm; border: 1px dashed #999; border-radius: 6px; display: inline-flex; align-items: center; padding: 4px 8px; gap: 8px; box-sizing: border-box; margin: 2mm; vertical-align: top; overflow: hidden; }');
-			doc.write('.sticker-qr img { width: ' + qrSize + 'px; height: ' + qrSize + 'px; display: block; }');
-			doc.write('.sticker-info { flex: 1; min-width: 0; text-align: center; }');
-			doc.write('.sticker-logo { width: 28px; height: 28px; margin: 0 auto 3px; display: block; }');
-			doc.write('.sticker-brand { font-weight: 700; font-size: 9px; margin-bottom: 2px; }');
-			doc.write('.sticker-model { font-size: 8px; color: #555; margin-bottom: 2px; }');
-			doc.write('.sticker-serial { font-size: 7px; color: #333; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }');
-			doc.write('.sticker-footer { font-size: 6px; color: #888; margin-top: 2px; }');
+			doc.write('@page { size: 60mm 30mm; margin: 0; }');
+			doc.write('body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background: #fff; }');
+			doc.write('.sticker { width: 60mm; height: 30mm; border: 1px dashed #ccc; border-radius: 4px; display: inline-flex; align-items: center; padding: 2mm 3mm; gap: 3mm; box-sizing: border-box; overflow: hidden; background: #fff; }');
+			doc.write('.sticker-qr { display: flex; align-items: center; justify-content: center; }');
+			doc.write('.sticker-qr img { width: 24mm; height: 24mm; display: block; object-fit: contain; }');
+			doc.write('.sticker-info { flex: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }');
+			doc.write('.sticker-logo { width: 7mm; height: 7mm; margin-bottom: 1mm; display: block; object-fit: contain; }');
+			doc.write('.sticker-brand { font-weight: 700; font-size: 8pt; margin-bottom: 0.5mm; color: #000; line-height: 1; }');
+			doc.write('.sticker-model { font-size: 7pt; color: #444; margin-bottom: 0.5mm; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }');
+			doc.write('.sticker-serial { font-size: 6.5pt; color: #000; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }');
+			doc.write('.sticker-footer { font-size: 5.5pt; color: #666; margin-top: 0.5mm; line-height: 1; }');
+			doc.write('@media print { .sticker { border: none; margin: 0; } }');
 			doc.write('<' + '/style><' + '/head><body>');
 			doc.write('<div class="sticker">');
 			doc.write('<div class="sticker-qr"><img src="' + qrUrl + '" alt="QR" onload="setTimeout(function(){window.print()},500)"><' + '/div>');
@@ -5831,15 +6250,15 @@
 					if (inv.paymentStatus === 'paid') {
 						statusBadge = 'Pagada';
 						statusColor = '#7af0a5';
-						statusIcon = '✅';
+						statusIcon = '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:2px">check_circle</span>';
 					} else if (inv.paymentStatus === 'partial') {
 						statusBadge = 'Pago parcial';
 						statusColor = '#ffcc33';
-						statusIcon = '⚠️';
+						statusIcon = '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:2px">warning</span>';
 					} else {
 						statusBadge = 'No pagada';
 						statusColor = '#ff6b6b';
-						statusIcon = '❌';
+						statusIcon = '<span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:2px">cancel</span>';
 					}
 
 					const card = document.createElement('div');
@@ -5850,16 +6269,16 @@
 							<span class="badge" style="background:${statusColor};color:#04121a">${statusIcon} ${statusBadge}</span>
 						</div>
 						<div class="data-card-body">
-							<div class="data-card-row"><span class="label">👤 Cliente:</span><span class="value">${escapeHtml(client.name)}</span></div>
-							<div class="data-card-row"><span class="label">📅 Fecha:</span><span class="value">${inv.date || ''}</span></div>
-							<div class="data-card-row"><span class="label">📄 Subtotal:</span><span class="value">${formatCurrency(subtotal)}</span></div>
-							<div class="data-card-row"><span class="label">🧾 IVA:</span><span class="value">${formatCurrency(tax)}</span></div>
-							<div class="data-card-row"><span class="label">💰 Total:</span><span class="value" style="font-weight:bold;font-size:1.1em;color:#7af0a5">${formatCurrency(total)}</span></div>
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">person</span> Cliente:</span><span class="value">${escapeHtml(client.name)}</span></div>
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">calendar_today</span> Fecha:</span><span class="value">${inv.date || ''}</span></div>
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">description</span> Subtotal:</span><span class="value">${formatCurrency(subtotal)}</span></div>
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">receipt</span> IVA:</span><span class="value">${formatCurrency(tax)}</span></div>
+							<div class="data-card-row"><span class="label"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">payments</span> Total:</span><span class="value" style="font-weight:bold;font-size:1.1em;color:#7af0a5">${formatCurrency(total)}</span></div>
 						</div>
 						<div class="data-card-actions">
-							<button class="btn card-btn-pdf" data-id="${inv.id}" style="background:#7af0a5;color:#04121a">📄 PDF</button>
-							<button class="btn btn-edit card-btn-edit" data-id="${inv.id}">✏️ Editar</button>
-							<button class="btn btn-delete card-btn-del" data-id="${inv.id}">🗑️ Eliminar</button>
+							<button class="btn card-btn-pdf" data-id="${inv.id}" style="background:#7af0a5;color:#04121a"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">picture_as_pdf</span> PDF</button>
+							<button class="btn btn-edit card-btn-edit" data-id="${inv.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">edit</span> Editar</button>
+							<button class="btn btn-delete card-btn-del" data-id="${inv.id}"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;margin-right:4px">delete</span> Eliminar</button>
 						</div>
 					`;
 					cardsContainer.appendChild(card);
@@ -6149,16 +6568,12 @@
 			form.reset();
 			form.date.value = new Date().toISOString().slice(0, 10);
 
-			// poblar selector de clientes
-			const clientSelect = form.querySelector('select[name="clientId"]');
-			const clients = await loadClients();
-			clientSelect.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
-			clients.forEach(c => {
-				const opt = document.createElement('option');
-				opt.value = c.id;
-				opt.textContent = c.name;
-				clientSelect.appendChild(opt);
-			});
+			// limpiar e inicializar selector de clientes
+			const clientSearchInput = document.getElementById('invoice-client-search');
+			if (clientSearchInput) {
+				clientSearchInput.value = '';
+			}
+			await populateInvoiceClientSelect();
 
 			if (id) {
 				const invoices = await loadInvoices();
@@ -7685,19 +8100,19 @@
 			if (summary) summary.textContent = filtered.length + ' de ' + catalogItems.length + ' productos';
 
 			if (filtered.length === 0) {
-				tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)"><p style="font-size:48px;margin-bottom:12px">🛍️</p><p>No hay productos en el catálogo</p><p style="font-size:12px;margin-top:8px">Agrega tu primer producto con el botón "Nuevo Producto"</p></td></tr>';
+				tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)"><p style="font-size:48px;margin-bottom:12px"><span class="material-icons-round" style="font-size:48px;color:var(--muted)">storefront</span></p><p>No hay productos en el catálogo</p><p style="font-size:12px;margin-top:8px">Agrega tu primer producto con el botón "Nuevo Producto"</p></td></tr>';
 			} else {
 				tbody.innerHTML = filtered.map(function (p) {
 					var mainImg = getMainImage(p);
 					var avail = p.available !== false;
 					return '<tr>' +
-						'<td><div style="width:50px;height:50px;border-radius:6px;overflow:hidden;background:#1e293b">' + (mainImg ? '<img src="' + escapeHtml(mainImg) + '" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:20px">📦</div>') + '</div></td>' +
+						'<td><div style="width:50px;height:50px;border-radius:6px;overflow:hidden;background:#1e293b">' + (mainImg ? '<img src="' + escapeHtml(mainImg) + '" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted)"><span class="material-icons-round" style="font-size:20px">inventory_2</span></div>') + '</div></td>' +
 						'<td style="font-weight:600">' + escapeHtml(p.name || '') + '</td>' +
 						'<td style="color:var(--muted);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(p.description || '--') + '</td>' +
 						'<td><span style="background:rgba(122,240,165,.15);color:#7af0a5;font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600">' + escapeHtml(p.category || '--') + '</span></td>' +
 						'<td style="font-weight:700;color:#7af0a5">' + formatCurrency(p.price || 0) + '</td>' +
-						'<td>' + (avail ? '<span style="color:#7af0a5">✅</span>' : '<span style="color:#ff5b6b">❌</span>') + '</td>' +
-						'<td class="actions"><button class="btn btn-edit" onclick="openCatalogModal(\'' + p.id + '\')">✏️</button><button class="btn btn-delete" onclick="deleteCatalogItem(\'' + p.id + '\')">🗑️</button></td>' +
+						'<td>' + (avail ? '<span class="material-icons-round" style="color:#7af0a5;font-size:16px;vertical-align:middle">check_circle</span>' : '<span class="material-icons-round" style="color:#ff5b6b;font-size:16px;vertical-align:middle">cancel</span>') + '</td>' +
+						'<td class="actions"><button class="btn btn-edit" onclick="openCatalogModal(\'' + p.id + '\')"><span class="material-icons-round" style="font-size:16px;vertical-align:middle">edit</span></button><button class="btn btn-delete" onclick="deleteCatalogItem(\'' + p.id + '\')"><span class="material-icons-round" style="font-size:16px;vertical-align:middle">delete</span></button></td>' +
 						'</tr>';
 				}).join('');
 			}
@@ -7712,8 +8127,8 @@
 						var avail = p.available !== false;
 						return '<div class="card" style="overflow:hidden">' +
 							'<div style="height:140px;background:#1e293b;overflow:hidden;position:relative">' +
-							(mainImg ? '<img src="' + escapeHtml(mainImg) + '" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:48px">📦</div>') +
-							(p.featured ? '<span style="position:absolute;top:6px;right:6px;background:var(--accent);color:#04121a;font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px">⭐ DEST.</span>' : '') +
+							(mainImg ? '<img src="' + escapeHtml(mainImg) + '" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted)"><span class="material-icons-round" style="font-size:48px">inventory_2</span></div>') +
+							(p.featured ? '<span style="position:absolute;top:6px;right:6px;background:var(--accent);color:#04121a;font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:2px"><span class="material-icons-round" style="font-size:11px">star</span> DEST.</span>' : '') +
 							(!avail ? '<span style="position:absolute;top:6px;left:6px;background:#ff5b6b;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px">OCULTO</span>' : '') +
 							'</div>' +
 							'<div style="padding:12px">' +
@@ -7723,8 +8138,8 @@
 							'<div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.04);padding-top:8px;margin-top:6px">' +
 							'<span style="font-size:16px;font-weight:800;color:#7af0a5">' + formatCurrency(p.price || 0) + '</span>' +
 							'<div style="display:flex;gap:4px">' +
-							'<button class="btn btn-edit" onclick="openCatalogModal(\'' + p.id + '\')" style="padding:4px 8px;font-size:11px">✏️</button>' +
-							'<button class="btn btn-delete" onclick="deleteCatalogItem(\'' + p.id + '\')" style="padding:4px 8px;font-size:11px">🗑️</button>' +
+							'<button class="btn btn-edit" onclick="openCatalogModal(\'' + p.id + '\')" style="padding:4px 8px;font-size:11px"><span class="material-icons-round" style="font-size:14px;vertical-align:middle">edit</span></button>' +
+							'<button class="btn btn-delete" onclick="deleteCatalogItem(\'' + p.id + '\')" style="padding:4px 8px;font-size:11px"><span class="material-icons-round" style="font-size:14px;vertical-align:middle">delete</span></button>' +
 							'</div>' +
 							'</div>' +
 							'</div>' +
