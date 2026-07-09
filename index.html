@@ -2613,7 +2613,7 @@
 	<div class="modal" id="modal-order">
 		<div class="panel">
 			<h3 id="modal-order-title">Nueva orden</h3>
-			<form id="form-order">
+			<form id="form-order" novalidate>
 				<div class="form-row">
 					<div id="order-client-select-wrapper" style="flex:1"></div>
 				</div>
@@ -4451,6 +4451,12 @@
 			e.preventDefault();
 			const f = e.target;
 
+			// Validación manual del cliente (el select está oculto y no puede mostrar error nativo)
+			if (!f.clientId || !f.clientId.value) {
+				alert('Por favor selecciona un cliente antes de guardar la orden.');
+				return;
+			}
+
 			// Mostrar indicador de carga
 			const submitBtn = f.querySelector('button[type="submit"]');
 			const originalText = submitBtn.textContent;
@@ -4811,7 +4817,7 @@
 					</div>
 					` : ''}
 				</div>
-				<select name="${selectName}" required style="opacity: 0; position: absolute; width: 0; height: 0; pointer-events: none; border: none; padding: 0; margin: 0;">
+				<select name="${selectName}" style="opacity: 0; position: absolute; width: 0; height: 0; pointer-events: none; border: none; padding: 0; margin: 0;">
 					<option value="">-- Seleccionar cliente --</option>
 				</select>
 			`;
@@ -4920,6 +4926,15 @@
 			}
 
 			function selectValue(val, text) {
+				if (val) {
+					let opt = hiddenSelect.querySelector(`option[value="${val}"]`);
+					if (!opt) {
+						opt = document.createElement('option');
+						opt.value = val;
+						opt.textContent = text;
+						hiddenSelect.appendChild(opt);
+					}
+				}
 				hiddenSelect.value = val;
 				hiddenSelect.dispatchEvent(new Event('change', { bubbles: true }));
 				container.querySelector('.custom-select-text').textContent = text;
@@ -4928,12 +4943,25 @@
 			}
 
 			container.setValue = async (val) => {
-				hiddenSelect.value = val;
 				if (val) {
 					const clients = await loadClients();
 					const client = clients.find(c => c.id == val);
-					container.querySelector('.custom-select-text').textContent = client ? client.name : '-- Seleccionar cliente --';
+					if (client) {
+						let opt = hiddenSelect.querySelector(`option[value="${val}"]`);
+						if (!opt) {
+							opt = document.createElement('option');
+							opt.value = val;
+							opt.textContent = client.name;
+							hiddenSelect.appendChild(opt);
+						}
+						hiddenSelect.value = val;
+						container.querySelector('.custom-select-text').textContent = client.name;
+					} else {
+						hiddenSelect.value = '';
+						container.querySelector('.custom-select-text').textContent = '-- Seleccionar cliente --';
+					}
 				} else {
+					hiddenSelect.value = '';
 					container.querySelector('.custom-select-text').textContent = '-- Seleccionar cliente --';
 				}
 			};
