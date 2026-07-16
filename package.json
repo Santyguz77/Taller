@@ -1,0 +1,28 @@
+{
+  "name": "mipc-taller",
+  "version": "4.0.0",
+  "description": "Sistema de gestión y PWA para MIPC Taller, con base de datos SQLite e integración de chat con IA Groq.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:check": "node check_db.js"
+  },
+  "keywords": [
+    "pwa",
+    "express",
+    "sqlite",
+    "groq-ai",
+    "taller-gestion"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}

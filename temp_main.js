@@ -25,7 +25,7 @@
 		}
 
 		// Configuración de API - solo Cloudflare
-		const API_BASE = "https://vendor-machinery-pet-interested.trycloudflare.com/api";
+		const API_BASE = "https://translated-ing-educators-assured.trycloudflare.com/api";
 		let API_TIMEOUT_MS = 10000; // 10 segundos timeout por defecto
 		let API_SAVE_TIMEOUT_MS = 30000; // 30 segundos para guardar (imágenes)
 		let MAX_RETRIES = 2; // solo 2 intentos

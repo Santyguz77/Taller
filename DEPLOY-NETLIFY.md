@@ -25,7 +25,7 @@ Edita estos archivos y cambia la URL:
 **index.html (línea ~723):**
 ```javascript
 // ANTES:
-const API_BASE = "https://collecting-split-counts-operators.trycloudflare.com/api";
+const API_BASE = "https://translated-ing-educators-assured.trycloudflare.com/api";
 
 // DESPUÉS (usa tu URL real):
 const API_BASE = "https://tu-dominio-hostinger.com/api";
