@@ -3324,6 +3324,7 @@
 
 		async function loadClients() { return await loadTable('clients'); }
 		async function saveClients(list) { await saveTable('clients', list); }
+		async function deleteClient_API(id) { await deleteItem('clients', id); }
 		async function loadEquipments() { return await loadTable('equipments'); }
 		async function saveEquipments(list) { await saveTable('equipments', list); }
 		async function loadTransactions() { return await loadTable('transactions'); }
@@ -3331,11 +3332,13 @@
 		// NUEVO: helpers de inventario (API)
 		async function loadInventory() { return await loadTable('inventory'); }
 		async function saveInventory(list) { await saveTable('inventory', list); }
+		async function deleteInventoryItem_API(id) { await deleteItem('inventory', id); }
 		async function loadInventoryMovements() { return await loadTable('inventory_movements'); }
 		async function saveInventoryMovements(list) { await saveTable('inventory_movements', list); }
 		// NUEVO: helpers de facturas (API)
 		async function loadInvoices() { return await loadTable('invoices'); }
 		async function saveInvoices(list) { await saveTable('invoices', list); }
+		async function deleteInvoice_API(id) { await deleteItem('invoices', id); }
 		async function loadSupplierInvoices() { return await loadTable('supplier_invoices'); }
 		async function saveSupplierInvoices(list) { await saveTable('supplier_invoices', list); }
 		async function saveSupplierInvoice_API(item) { await saveItem('supplier_invoices', item); }
@@ -4058,11 +4061,15 @@
 
 		// eliminar orden (ahora asíncrono)
 		async function deleteOrder(id) {
-			const list = (await loadOrders()).filter(x => x.id != id);
-			await saveOrders(list);
-			await renderOrders();
-			await renderFinance();
-			await computeMetrics();
+			try {
+				await deleteOrder_API(id);
+				await renderOrders();
+				await renderFinance();
+				await computeMetrics();
+			} catch (err) {
+				console.error('Error al eliminar orden:', err);
+				alert('No se pudo eliminar la orden. Error: ' + err.message);
+			}
 		}
 
 		// Generar PDF para una sola orden (sincrónico en su uso pero puede ser async)
@@ -4749,19 +4756,23 @@
 		}
 
 		async function deleteClient(id) {
-			const list = (await loadClients()).filter(x => x.id != id);
-			await saveClients(list);
-			await renderClients();
+			try {
+				await deleteClient_API(id);
+				await renderClients();
 
-			const orderWrapper = document.getElementById('order-client-select-wrapper');
-			const invoiceWrapper = document.getElementById('invoice-client-select-wrapper');
-			if (orderWrapper && orderWrapper.refresh) {
-				await orderWrapper.refresh();
-			} else {
-				await populateClientSelect();
-			}
-			if (invoiceWrapper && invoiceWrapper.refresh) {
-				await invoiceWrapper.refresh();
+				const orderWrapper = document.getElementById('order-client-select-wrapper');
+				const invoiceWrapper = document.getElementById('invoice-client-select-wrapper');
+				if (orderWrapper && orderWrapper.refresh) {
+					await orderWrapper.refresh();
+				} else {
+					await populateClientSelect();
+				}
+				if (invoiceWrapper && invoiceWrapper.refresh) {
+					await invoiceWrapper.refresh();
+				}
+			} catch (err) {
+				console.error('Error al eliminar cliente:', err);
+				alert('No se pudo eliminar el cliente. Error: ' + err.message);
 			}
 		}
 
@@ -5324,39 +5335,43 @@
 
 		/* NUEVO: eliminar factura */
 		async function deleteInvoice(id) {
-			const invoices = await loadInvoices();
-			const invoice = invoices.find(i => i.id === id);
+			try {
+				const invoices = await loadInvoices();
+				const invoice = invoices.find(i => i.id === id);
 
-			if (invoice) {
-				// restaurar inventario
-				const inventory = await loadInventory();
-				for (const item of invoice.items) {
-					if (item.inventoryItemId) {
-						const idx = inventory.findIndex(i => i.id === item.inventoryItemId);
-						if (idx !== -1) {
-							inventory[idx].stock = Number(inventory[idx].stock || 0) + Number(item.quantity || 0);
-							inventory[idx].updatedAt = new Date().toISOString();
+				if (invoice) {
+					// restaurar inventario
+					const inventory = await loadInventory();
+					for (const item of invoice.items) {
+						if (item.inventoryItemId) {
+							const idx = inventory.findIndex(i => i.id === item.inventoryItemId);
+							if (idx !== -1) {
+								inventory[idx].stock = Number(inventory[idx].stock || 0) + Number(item.quantity || 0);
+								inventory[idx].updatedAt = new Date().toISOString();
+							}
 						}
 					}
+					await saveInventory(inventory);
+
+					// eliminar movimientos
+					let movements = await loadInventoryMovements();
+					movements = movements.filter(m => m.invoiceId !== id);
+					await saveInventoryMovements(movements);
+
+					// eliminar transacción
+					let transactions = await loadTransactions();
+					transactions = transactions.filter(t => t.invoiceId !== id);
+					await saveTransactions(transactions);
 				}
-				await saveInventory(inventory);
 
-				// eliminar movimientos
-				let movements = await loadInventoryMovements();
-				movements = movements.filter(m => m.invoiceId !== id);
-				await saveInventoryMovements(movements);
-
-				// eliminar transacción
-				let transactions = await loadTransactions();
-				transactions = transactions.filter(t => t.invoiceId !== id);
-				await saveTransactions(transactions);
+				await deleteInvoice_API(id);
+				await renderInvoices();
+				await renderInventory();
+				await renderFinance();
+			} catch (err) {
+				console.error('Error al eliminar factura:', err);
+				alert('No se pudo eliminar la factura. Error: ' + err.message);
 			}
-
-			const list = invoices.filter(x => x.id !== id);
-			await saveInvoices(list);
-			await renderInvoices();
-			await renderInventory();
-			await renderFinance();
 		}
 
 		/* NUEVO: exportar factura a PDF */
@@ -5887,14 +5902,17 @@
 
 		// Eliminar ítem de inventario
 		async function deleteInventoryItem(id) {
-			const list = await loadInventory();
-			const newList = list.filter(x => x.id !== id);
-			await saveInventory(newList);
-			// eliminar movimientos asociados
-			let movs = await loadInventoryMovements();
-			movs = movs.filter(m => m.itemId !== id);
-			await saveInventoryMovements(movs);
-			await renderInventory();
+			try {
+				await deleteInventoryItem_API(id);
+				// eliminar movimientos asociados
+				let movs = await loadInventoryMovements();
+				movs = movs.filter(m => m.itemId !== id);
+				await saveInventoryMovements(movs);
+				await renderInventory();
+			} catch (err) {
+				console.error('Error al eliminar ítem de inventario:', err);
+				alert('No se pudo eliminar el ítem de inventario. Error: ' + err.message);
+			}
 		}
 
 		// Abrir modal de movimiento (entrada/salida)
