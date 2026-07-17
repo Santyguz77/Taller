@@ -38,6 +38,7 @@
 			flex: 1;
 			min-width: 0;
 		}
+
 		.custom-select-trigger {
 			display: flex;
 			justify-content: space-between;
@@ -54,29 +55,35 @@
 			min-height: 38px;
 			box-sizing: border-box;
 		}
+
 		.custom-select-trigger:hover {
 			border-color: var(--accent);
 			background: rgba(163, 230, 53, 0.04);
 		}
+
 		.custom-select-trigger.active {
 			border-color: var(--accent);
 			box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.15);
 		}
+
 		.custom-select-text {
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			margin-right: 8px;
 		}
+
 		.custom-select-container .dropdown-icon {
 			font-size: 20px;
 			color: var(--muted);
 			transition: transform 0.2s ease;
 		}
+
 		.custom-select-trigger.active .dropdown-icon {
 			transform: rotate(180deg);
 			color: var(--accent);
 		}
+
 		.custom-select-dropdown {
 			position: absolute;
 			top: calc(100% + 4px);
@@ -92,9 +99,11 @@
 			flex-direction: column;
 			max-height: 300px;
 		}
+
 		.custom-select-dropdown.hidden {
 			display: none !important;
 		}
+
 		.custom-select-search-wrapper {
 			display: flex;
 			align-items: center;
@@ -103,10 +112,12 @@
 			background: rgba(0, 0, 0, 0.2);
 			gap: 8px;
 		}
+
 		.custom-select-search-wrapper .search-icon {
 			color: var(--muted);
 			font-size: 18px;
 		}
+
 		.custom-select-search {
 			flex: 1;
 			background: transparent;
@@ -116,11 +127,13 @@
 			font-size: 13px;
 			padding: 2px 0;
 		}
+
 		.custom-select-options {
 			overflow-y: auto;
 			flex: 1;
 			max-height: 220px;
 		}
+
 		.custom-select-option {
 			padding: 10px 12px;
 			cursor: pointer;
@@ -132,28 +145,35 @@
 			gap: 2px;
 			border-bottom: 1px solid rgba(255, 255, 255, 0.02);
 		}
+
 		.custom-select-option:last-child {
 			border-bottom: none;
 		}
+
 		.custom-select-option:hover {
 			background: rgba(163, 230, 53, 0.08);
 			color: #fff;
 		}
+
 		.custom-select-option.selected {
 			background: rgba(163, 230, 53, 0.15);
 			color: var(--accent);
 			font-weight: 600;
 		}
+
 		.custom-select-option-name {
 			font-weight: 500;
 		}
+
 		.custom-select-option-meta {
 			font-size: 11px;
 			color: var(--muted);
 		}
+
 		.custom-select-option.selected .custom-select-option-meta {
 			color: rgba(163, 230, 53, 0.7);
 		}
+
 		.custom-select-no-results {
 			padding: 16px;
 			text-align: center;
@@ -2199,7 +2219,8 @@
 			</section>
 			<section id="clients-section" class="card" style="display:none;margin-top:12px">
 				<h3>Clientes</h3>
-				<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px">
+				<div
+					style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px">
 					<button class="btn" id="btn-new-client-inline" style="margin:0">+ Nuevo cliente</button>
 					<div class="small filters" style="margin:0; display:flex; align-items:center; gap:8px">
 						Buscar:
@@ -2301,9 +2322,13 @@
 				<div
 					style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #e2e8f0;padding-bottom:10px">
 					<button class="btn" id="subtab-inventory" onclick="switchInventorySubtab('inv')"
-						style="background:#7af0a5;color:#04121a"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">inventory_2</span> Inventario</button>
+						style="background:#7af0a5;color:#04121a"><span class="material-icons-round"
+							style="font-size:16px;vertical-align:middle;margin-right:4px">inventory_2</span>
+						Inventario</button>
 					<button class="btn" id="subtab-catalog" onclick="switchInventorySubtab('cat')"
-						style="background:#64707a"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">storefront</span> Catálogo</button>
+						style="background:#64707a"><span class="material-icons-round"
+							style="font-size:16px;vertical-align:middle;margin-right:4px">storefront</span>
+						Catálogo</button>
 				</div>
 				<!-- Inventario subtab -->
 				<div id="inv-subtab-content">
@@ -2513,22 +2538,31 @@
 					<div id="backup-status" style="margin-top:10px;font-size:13px;display:none"></div>
 				</div>
 
-				<div class="footer-note" style="margin-top:12px">Equipos guardados en hoja de vida por número de serie.</div>
+				<div class="footer-note" style="margin-top:12px">Equipos guardados en hoja de vida por número de serie.
+				</div>
 
 				<div class="card" style="margin-top:24px;border:1px solid rgba(59,180,255,0.2)">
-					<h3 style="color:#3bb4ff"><span class="material-icons-round" style="vertical-align:middle;margin-right:6px">settings_backup_restore</span> Gestión de Backups (Servidor)</h3>
-					<p class="small" style="margin-bottom:12px;color:var(--muted)">Si has perdido datos recientemente, intenta restaurar una de las copias automáticas del servidor.</p>
+					<h3 style="color:#3bb4ff"><span class="material-icons-round"
+							style="vertical-align:middle;margin-right:6px">settings_backup_restore</span> Gestión de
+						Backups (Servidor)</h3>
+					<p class="small" style="margin-bottom:12px;color:var(--muted)">Si has perdido datos recientemente,
+						intenta restaurar una de las copias automáticas del servidor.</p>
 					<div class="form-row" style="gap:8px">
-						<select id="backup-table-select" style="flex:1;background:#051a1f;border:1px solid rgba(255,255,255,0.1);color:#fff;padding:8px;border-radius:6px">
+						<select id="backup-table-select"
+							style="flex:1;background:#051a1f;border:1px solid rgba(255,255,255,0.1);color:#fff;padding:8px;border-radius:6px">
 							<option value="clients">Clientes</option>
 							<option value="orders">Órdenes</option>
 							<option value="invoices">Facturas</option>
 							<option value="inventory">Inventario</option>
+							<option value="supplier_invoices">Facturas Prov.</option>
 						</select>
-						<button class="btn" id="btn-list-server-backups" style="background:#3bb4ff;color:#05121a">Listar Backups</button>
+						<button class="btn" id="btn-list-server-backups" style="background:#3bb4ff;color:#05121a">Listar
+							Backups</button>
 					</div>
-					<div id="server-backups-container" style="margin-top:12px;max-height:300px;overflow:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px">
-						<div class="small" style="color:var(--muted);text-align:center">Selecciona una tabla y pulsa "Listar"</div>
+					<div id="server-backups-container"
+						style="margin-top:12px;max-height:300px;overflow:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px">
+						<div class="small" style="color:var(--muted);text-align:center">Selecciona una tabla y pulsa
+							"Listar"</div>
 					</div>
 				</div>
 			</section>
@@ -2662,11 +2696,14 @@
 					<div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
 						<button type="button" id="btn-take-photo" class="btn"
 							style="background:#3bb4ff;color:#05121a;flex:1;min-width:150px">
-							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">photo_camera</span> Tomar Foto
+							<span class="material-icons-round"
+								style="font-size:18px;vertical-align:middle;margin-right:4px">photo_camera</span> Tomar
+							Foto
 						</button>
 						<button type="button" id="btn-choose-gallery" class="btn"
 							style="background:#9c27b0;color:#fff;flex:1;min-width:150px">
-							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">image</span> Galería
+							<span class="material-icons-round"
+								style="font-size:18px;vertical-align:middle;margin-right:4px">image</span> Galería
 						</button>
 					</div>
 					<input type="file" id="order-images-camera" accept="image/*" capture="environment" multiple
@@ -2719,8 +2756,12 @@
 			</div>
 			<div class="history-list" id="equipment-history" style="max-height:400px;overflow-y:auto"></div>
 			<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
-				<button type="button" class="btn" id="btn-eq-print-qr" style="background:#e040fb;color:#fff"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">print</span> Imprimir QR</button>
-				<button type="button" class="btn" id="btn-eq-copy-link" style="background:#9c27b0;color:#fff"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">link</span> Copiar Link</button>
+				<button type="button" class="btn" id="btn-eq-print-qr" style="background:#e040fb;color:#fff"><span
+						class="material-icons-round"
+						style="font-size:16px;vertical-align:middle;margin-right:4px">print</span> Imprimir QR</button>
+				<button type="button" class="btn" id="btn-eq-copy-link" style="background:#9c27b0;color:#fff"><span
+						class="material-icons-round"
+						style="font-size:16px;vertical-align:middle;margin-right:4px">link</span> Copiar Link</button>
 				<button type="button" class="btn" id="btn-close-equipment" style="background:#64707a">Cerrar</button>
 			</div>
 		</div>
@@ -2837,7 +2878,9 @@
 			<div class="form-row" style="align-items:center;gap:16px;margin-bottom:12px">
 				<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#e2e8f0;font-size:13px">
 					<input type="checkbox" id="cat-item-featured"
-						style="width:16px;height:16px;accent-color:var(--accent)"> <span class="material-icons-round" style="font-size:15px;color:var(--accent);vertical-align:middle;margin-right:2px">star</span> Destacado
+						style="width:16px;height:16px;accent-color:var(--accent)"> <span class="material-icons-round"
+						style="font-size:15px;color:var(--accent);vertical-align:middle;margin-right:2px">star</span>
+					Destacado
 				</label>
 				<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#e2e8f0;font-size:13px">
 					<input type="checkbox" id="cat-item-available" checked
@@ -2847,7 +2890,8 @@
 			<div style="display:flex;gap:8px;justify-content:flex-end">
 				<button class="btn" onclick="closeModal('#modal-catalog-item')"
 					style="background:#64707a">Cancelar</button>
-				<button class="btn" onclick="saveCatalogItem()"><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px">save</span> Guardar</button>
+				<button class="btn" onclick="saveCatalogItem()"><span class="material-icons-round"
+						style="font-size:16px;vertical-align:middle;margin-right:4px">save</span> Guardar</button>
 			</div>
 		</div>
 	</div>
@@ -2875,7 +2919,9 @@
 					<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;user-select:none">
 						<input type="checkbox" name="registerInFinance" id="registerInFinance" checked
 							style="width:auto;cursor:pointer;transform:scale(1.2)">
-						<span style="font-size:13px"><span class="material-icons-round" style="font-size:16px;color:#7af0a5;vertical-align:middle;margin-right:4px">payments</span> Registrar como ingreso en Finanzas <span class="small">(solo si
+						<span style="font-size:13px"><span class="material-icons-round"
+								style="font-size:16px;color:#7af0a5;vertical-align:middle;margin-right:4px">payments</span>
+							Registrar como ingreso en Finanzas <span class="small">(solo si
 								está pagada)</span></span>
 					</label>
 				</div>
@@ -2933,15 +2979,23 @@
 				<div class="form-row" style="flex-direction:column;align-items:flex-start">
 					<label style="color:var(--muted);font-size:13px;margin-bottom:4px">Imagen de la factura:</label>
 					<div style="display:flex;gap:10px;width:100%;align-items:center">
-						<button type="button" class="btn" onclick="document.getElementById('supplier-invoice-image-input').click()" style="background:#3bb4ff;color:#05121a;flex:1">
-							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">image</span> Seleccionar/Cambiar Imagen
+						<button type="button" class="btn"
+							onclick="document.getElementById('supplier-invoice-image-input').click()"
+							style="background:#3bb4ff;color:#05121a;flex:1">
+							<span class="material-icons-round"
+								style="font-size:18px;vertical-align:middle;margin-right:4px">image</span>
+							Seleccionar/Cambiar Imagen
 						</button>
-						<button type="button" class="btn btn-delete" id="btn-remove-supplier-invoice-image" style="flex:1;display:none">
-							<span class="material-icons-round" style="font-size:18px;vertical-align:middle;margin-right:4px">delete</span> Quitar Imagen
+						<button type="button" class="btn btn-delete" id="btn-remove-supplier-invoice-image"
+							style="flex:1;display:none">
+							<span class="material-icons-round"
+								style="font-size:18px;vertical-align:middle;margin-right:4px">delete</span> Quitar
+							Imagen
 						</button>
 					</div>
 					<input type="file" id="supplier-invoice-image-input" accept="image/*" style="display:none">
-					<div id="supplier-invoice-image-preview" style="margin-top:12px;width:100%;display:flex;justify-content:center"></div>
+					<div id="supplier-invoice-image-preview"
+						style="margin-top:12px;width:100%;display:flex;justify-content:center"></div>
 					<input type="hidden" name="image" id="supplier-invoice-image-base64">
 				</div>
 				<div class="form-row">
@@ -2984,8 +3038,8 @@
 					<!-- historial de abonos -->
 				</div>
 				<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-					<button type="button" class="btn" id="btn-close-supplier-abono"
-						style="background:#64707a">Salir / Cerrar</button>
+					<button type="button" class="btn" id="btn-close-supplier-abono" style="background:#64707a">Salir /
+						Cerrar</button>
 					<button type="submit" class="btn">Registrar Abono</button>
 				</div>
 			</form>
@@ -3049,8 +3103,8 @@
 		// Configuración de API - solo Cloudflare
 		const API_BASE = "https://translated-ing-educators-assured.trycloudflare.com/api";
 		const API_URL = API_BASE;
-		let API_TIMEOUT_MS = 10000; // 10 segundos timeout por defecto
-		let API_SAVE_TIMEOUT_MS = 30000; // 30 segundos para guardar (imágenes)
+		let API_TIMEOUT_MS = 30000; // 10 segundos timeout por defecto
+		let API_SAVE_TIMEOUT_MS = 60000; // 30 segundos para guardar (imágenes)
 		let MAX_RETRIES = 2; // solo 2 intentos
 		let isOnline = true;
 		let reconnectInterval = null;
@@ -3283,6 +3337,7 @@
 		async function loadInvoices() { return await loadTable('invoices'); }
 		async function saveInvoices(list) { await saveTable('invoices', list); }
 		async function loadSupplierInvoices() { return await loadTable('supplier_invoices'); }
+		async function saveSupplierInvoices(list) { await saveTable('supplier_invoices', list); }
 		async function saveSupplierInvoice_API(item) { await saveItem('supplier_invoices', item); }
 		async function deleteSupplierInvoice_API(id) { await deleteItem('supplier_invoices', id); }
 
@@ -4280,7 +4335,7 @@
 			$('#modal-order-title').textContent = id ? 'Editar orden' : 'Nueva orden';
 			const form = $('#form-order');
 			form.reset();
-			
+
 			const orderWrapper = document.getElementById('order-client-select-wrapper');
 			if (orderWrapper && orderWrapper.setValue) {
 				await orderWrapper.setValue('');
@@ -4546,7 +4601,7 @@
 		async function renderClients() {
 			const tbody = $('#clients-table tbody');
 			const items = await loadClients();
-			
+
 			const filterInput = $('#client-filter-input');
 			const filterText = filterInput ? filterInput.value.toLowerCase().trim() : '';
 
@@ -4716,7 +4771,7 @@
 			if (!sel) return;
 			const selectedValue = sel.value;
 			const clients = await loadClients();
-			
+
 			const query = filterText.toLowerCase().trim();
 			const filteredClients = clients.filter(c => {
 				if (!query) return true;
@@ -4733,7 +4788,7 @@
 			});
 
 			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
-			
+
 			// Si hay un valor seleccionado y no está en la lista filtrada, mantenerlo
 			if (selectedValue && !filteredClients.some(c => c.id == selectedValue)) {
 				const currentClient = clients.find(c => c.id == selectedValue);
@@ -4756,7 +4811,7 @@
 			if (!sel) return;
 			const selectedValue = sel.value;
 			const clients = await loadClients();
-			
+
 			const query = filterText.toLowerCase().trim();
 			const filteredClients = clients.filter(c => {
 				if (!query) return true;
@@ -4773,7 +4828,7 @@
 			});
 
 			sel.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
-			
+
 			// Si hay un valor seleccionado y no está en la lista filtrada, mantenerlo
 			if (selectedValue && !filteredClients.some(c => c.id == selectedValue)) {
 				const currentClient = clients.find(c => c.id == selectedValue);
@@ -5048,22 +5103,23 @@
 			try {
 				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#3bb4ff'; statusEl.textContent = 'Generando copia de seguridad...'; }
 
-				const [orders, clients, transactions, equipments, inventory, movements, invoices] = await Promise.all([
+				const [orders, clients, transactions, equipments, inventory, movements, invoices, supplierInvoices] = await Promise.all([
 					loadOrders(), loadClients(), loadTransactions(), loadEquipments(),
-					loadInventory(), loadInventoryMovements(), loadInvoices()
+					loadInventory(), loadInventoryMovements(), loadInvoices(), loadSupplierInvoices()
 				]);
 
 				const backup = {
 					_mipcBackup: true,
 					version: '1.0',
 					createdAt: new Date().toISOString(),
-					tables: { orders, clients, transactions, equipments, inventory, inventory_movements: movements, invoices },
+					tables: { orders, clients, transactions, equipments, inventory, inventory_movements: movements, invoices, supplier_invoices: supplierInvoices },
 					stats: {
 						orders: orders.length,
 						clients: clients.length,
 						transactions: transactions.length,
 						inventory: inventory.length,
-						invoices: invoices.length
+						invoices: invoices.length,
+						supplier_invoices: supplierInvoices.length
 					}
 				};
 
@@ -5076,7 +5132,7 @@
 				a.click();
 				URL.revokeObjectURL(url);
 
-				if (statusEl) { statusEl.style.color = '#7af0a5'; statusEl.textContent = `Copia descargada: ${orders.length} órdenes, ${clients.length} clientes, ${transactions.length} transacciones, ${inventory.length} items, ${invoices.length} facturas`; }
+				if (statusEl) { statusEl.style.color = '#7af0a5'; statusEl.textContent = `Copia descargada: ${orders.length} órdenes, ${clients.length} clientes, ${transactions.length} transacciones, ${inventory.length} items, ${invoices.length} facturas, ${supplierInvoices.length} facturas prov.`; }
 			} catch (err) {
 				console.error('Error en backup:', err);
 				if (statusEl) { statusEl.style.color = '#ff5b6b'; statusEl.textContent = 'Error al generar copia: ' + err.message; }
@@ -5106,7 +5162,8 @@
 						`- ${stats.clients || 0} clientes\n` +
 						`- ${stats.transactions || 0} transacciones\n` +
 						`- ${stats.inventory || 0} items de inventario\n` +
-						`- ${stats.invoices || 0} facturas\n\n` +
+						`- ${stats.invoices || 0} facturas\n` +
+						`- ${stats.supplier_invoices || 0} facturas prov.\n\n` +
 						`ADVERTENCIA: Esto reemplazará TODOS los datos actuales.`;
 
 					if (!confirm(msg)) return;
@@ -5121,6 +5178,7 @@
 					if (Array.isArray(t.inventory)) await saveInventory(t.inventory);
 					if (Array.isArray(t.inventory_movements)) await saveInventoryMovements(t.inventory_movements);
 					if (Array.isArray(t.invoices)) await saveInvoices(t.invoices);
+					if (Array.isArray(t.supplier_invoices)) await saveSupplierInvoices(t.supplier_invoices);
 
 					if (statusEl) { statusEl.style.color = '#7af0a5'; statusEl.textContent = 'Restauración completada. Recargando datos...'; }
 
@@ -5131,6 +5189,7 @@
 					await renderFinance();
 					await renderInventory();
 					await renderInvoices();
+					await renderSupplierInvoices();
 
 					alert('Copia de seguridad restaurada exitosamente.');
 				} catch (err) {
